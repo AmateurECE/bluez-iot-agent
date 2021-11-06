@@ -7,7 +7,7 @@
 #
 # CREATED:          11/05/2021
 #
-# LAST EDITED:      11/05/2021
+# LAST EDITED:      11/06/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -27,8 +27,14 @@
 
 cmake_minimum_required(VERSION 3.15.3)
 project(bluez-soundsystem-agent LANGUAGES C)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(MHD REQUIRED libmicrohttpd)
+
 add_executable(bluez-soundsystem-agent
   source/bluez-soundsystem-agent.c
   )
+target_link_libraries(bluez-soundsystem-agent ${MHD_LIBRARIES})
+target_include_directories(bluez-soundsystem-agent PUBLIC ${MHD_INCLUDE_DIRS})
 
 ###############################################################################
