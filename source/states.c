@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            web-server.h
+// NAME:            states.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Web server, serving the user interface to the agent
+// DESCRIPTION:     Implementation of actual state behavior.
 //
 // CREATED:         11/07/2021
 //
@@ -25,20 +25,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef WEB_SERVER_H
-#define WEB_SERVER_H
+#include "state-machine.h"
 
-static const int HTTP_PORT = 8888;
-
-struct MHD_Daemon;
-
-typedef struct WebServer {
-    struct MHD_Daemon* daemon;
-} WebServer;
-
-WebServer* web_server_start();
-void web_server_stop(WebServer** server);
-
-#endif // WEB_SERVER_H
+int do_state_initializing(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
+int do_state_connection_wait(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
+int do_state_connected(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
+int do_state_pairing(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
+int do_state_shutdown(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
 
 ///////////////////////////////////////////////////////////////////////////////

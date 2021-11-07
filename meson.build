@@ -28,11 +28,14 @@
 project('bluez-soundsystem-agent', 'c')
 libmicrohttpd = dependency('libmicrohttpd')
 libdbus = dependency('dbus-1')
+libfsautomata = dependency('libfsautomata')
 executable(
   'bluez-soundsystem-agent',
   'source/bluez-soundsystem-agent.c',
   'source/web-server.c',
-  dependencies: [libmicrohttpd, libdbus],
+  'source/state-machine.c',
+  'source/states.c',
+  dependencies: [libmicrohttpd, libdbus, libfsautomata],
   install: true,
 )
 

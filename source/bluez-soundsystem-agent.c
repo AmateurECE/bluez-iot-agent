@@ -25,17 +25,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+
+#include <errno.h>
 #include <stdio.h>
 
-#include "web-server.h"
+#include "state-machine.h"
 
-int main() {
-    printf("Starting web server\n");
-    WebServer* server = web_server_start();
+int main(int argc, char** argv) {
+    SoundStateMachine* state_machine = state_machine_initialize();
 
-    getchar();
-    printf("Stopping web server\n");
-    web_server_stop(server);
+    int result = state_machine_execute(state_machine);
+    state_machine_finish(&state_machine);
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

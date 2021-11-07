@@ -66,9 +66,12 @@ WebServer* web_server_start() {
     return server;
 }
 
-void web_server_stop(WebServer* server) {
-    MHD_stop_daemon(server->daemon);
-    free(server);
+void web_server_stop(WebServer** server) {
+    if (NULL != *server) {
+        MHD_stop_daemon((*server)->daemon);
+        free(*server);
+        *server = NULL;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
