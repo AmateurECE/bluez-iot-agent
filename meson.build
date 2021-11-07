@@ -37,6 +37,7 @@ executable(
   'source/states.c',
   dependencies: [libmicrohttpd, libdbus, libfsautomata],
   install: true,
+  c_args: ['-Wall', '-Wextra'],
 )
 
 # Install dbus policy

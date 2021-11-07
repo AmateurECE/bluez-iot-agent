@@ -33,6 +33,15 @@
 
 #include "state-machine.h"
 
+static const char* STATE_STRINGS[] = {
+    [STATE_INVALID]="STATE_INVALID",
+    [STATE_INITIALIZING]="STATE_INITIALIZING",
+    [STATE_CONNECTION_WAIT]="STATE_CONNECTION_WAIT",
+    [STATE_CONNECTED]="STATE_CONNECTED",
+    [STATE_PAIRING]="STATE_PAIRING",
+    [STATE_SHUTDOWN]="STATE_SHUTDOWN",
+};
+
 static const StateTransition initializing_tt[] = {
     { SIGNAL_INITIALIZED, 0, STATE_CONNECTION_WAIT },
     { SIGNAL_SHUTDOWN, 0, STATE_SHUTDOWN },
@@ -145,6 +154,10 @@ void state_machine_finish(SoundStateMachine** state_machine) {
         free(*state_machine);
         *state_machine = NULL;
     }
+}
+
+const char* state_to_string(enum States state) {
+    return STATE_STRINGS[state];
 }
 
 ///////////////////////////////////////////////////////////////////////////////

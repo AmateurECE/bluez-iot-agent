@@ -25,12 +25,46 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#include "state-machine.h"
+#include <stdio.h>
+#include <unistd.h>
 
-int do_state_initializing(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
-int do_state_connection_wait(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
-int do_state_connected(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
-int do_state_pairing(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
-int do_state_shutdown(int*, void* user_data) { return SIGNAL_SHUTDOWN; }
+#include "state-machine.h"
+#include "web-server.h"
+
+int do_state_initializing(int* state __attribute__((unused)),
+    void* user_data)
+{
+    SoundMachineState* machine = (SoundMachineState*)user_data;
+    printf("Starting web server\n");
+    machine->web_server = web_server_start();
+    return SIGNAL_INITIALIZED;
+}
+
+// Just for now, wait for 30 seconds, then trigger a shutdown.
+int do_state_connection_wait(int* state __attribute__((unused)),
+    void* user_data)
+{
+    int timer = 0;
+    while (timer++ < 30) {
+        sleep(1);
+    }
+
+    return SIGNAL_SHUTDOWN;
+}
+
+int do_state_connected(int* state __attribute__((unused)), void* user_data) {
+    return SIGNAL_SHUTDOWN;
+}
+
+int do_state_pairing(int* state __attribute__((unused)), void* user_data) {
+    return SIGNAL_SHUTDOWN;
+}
+
+int do_state_shutdown(int* state __attribute__((unused)), void* user_data) {
+    SoundMachineState* machine = (SoundMachineState*)user_data;
+    printf("Shutting down\n");
+    web_server_stop(&machine->web_server);
+    return 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////

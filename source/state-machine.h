@@ -75,6 +75,8 @@ SoundStateMachine* state_machine_initialize();
 int state_machine_execute(SoundStateMachine* state_machine);
 void state_machine_finish(SoundStateMachine** state_machine);
 
+const char* state_to_string(enum States);
+
 #endif // STATE_MACHINE_H
 
 ///////////////////////////////////////////////////////////////////////////////
