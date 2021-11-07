@@ -1,11 +1,11 @@
 ###############################################################################
-# NAME:             CMakeLists.txt
+# NAME:             meson.build
 #
 # AUTHOR:           Ethan D. Twardy <ethan.twardy@gmail.com>
 #
-# DESCRIPTION:      Build script for the project.
+# DESCRIPTION:      Meson build script for the application
 #
-# CREATED:          11/05/2021
+# CREATED:          11/06/2021
 #
 # LAST EDITED:      11/06/2021
 #
@@ -25,16 +25,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-cmake_minimum_required(VERSION 3.15.3)
-project(bluez-soundsystem-agent LANGUAGES C)
-
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(MHD REQUIRED libmicrohttpd)
-
-add_executable(bluez-soundsystem-agent
-  source/bluez-soundsystem-agent.c
-  )
-target_link_libraries(bluez-soundsystem-agent ${MHD_LIBRARIES})
-target_include_directories(bluez-soundsystem-agent PUBLIC ${MHD_INCLUDE_DIRS})
+project('bluez-soundsystem-agent', 'c')
+libmicrohttpd = dependency('libmicrohttpd')
+executable(
+  'bluez-soundsystem-agent',
+  'source/bluez-soundsystem-agent.c',
+  dependencies: [libmicrohttpd],
+  install: true,
+)
 
 ###############################################################################
