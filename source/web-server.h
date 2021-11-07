@@ -1,11 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            bluez-soundsystem-agent.c
+// NAME:            web-server.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Entrypoint for the program
+// DESCRIPTION:     Web server, serving the user interface to the agent
 //
-// CREATED:         11/05/2021
+// CREATED:         11/07/2021
 //
 // LAST EDITED:     11/07/2021
 //
@@ -25,17 +25,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#include <stdio.h>
+#ifndef WEB_SERVER_H
+#define WEB_SERVER_H
 
-#include "web-server.h"
+static const int HTTP_PORT = 8888;
 
-int main() {
-    printf("Starting web server\n");
-    WebServer* server = web_server_start();
+struct MHD_Daemon;
 
-    getchar();
-    printf("Stopping web server\n");
-    web_server_stop(server);
-}
+typedef struct WebServer {
+    struct MHD_Daemon* daemon;
+} WebServer;
+
+WebServer* web_server_start();
+void web_server_stop(WebServer* server);
+
+#endif // WEB_SERVER_H
 
 ///////////////////////////////////////////////////////////////////////////////

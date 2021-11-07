@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/06/2021
+# LAST EDITED:      11/07/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -27,11 +27,19 @@
 
 project('bluez-soundsystem-agent', 'c')
 libmicrohttpd = dependency('libmicrohttpd')
+libdbus = dependency('dbus-1')
 executable(
   'bluez-soundsystem-agent',
   'source/bluez-soundsystem-agent.c',
-  dependencies: [libmicrohttpd],
+  'source/web-server.c',
+  dependencies: [libmicrohttpd, libdbus],
   install: true,
+)
+
+# Install dbus policy
+install_data(
+  'dbus-1/bluez-soundsystem-agent.conf',
+  install_dir: 'share/dbus-1/system.d'
 )
 
 ###############################################################################
