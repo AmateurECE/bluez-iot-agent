@@ -57,7 +57,7 @@ static int bluez_register_agent(AgentServer* server) {
     DBusMessageIter arguments;
     dbus_message_iter_init_append(message, &arguments);
     // TODO: This needs to be an object path
-    if (!dbus_message_iter_append_basic(&arguments, DBUS_TYPE_STRING,
+    if (!dbus_message_iter_append_basic(&arguments, DBUS_TYPE_OBJECT_PATH,
             &AGENT_OBJECT)
         || !dbus_message_iter_append_basic(&arguments, DBUS_TYPE_STRING,
             &AGENT_CAPABILITY)) {
