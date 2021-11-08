@@ -35,6 +35,7 @@ executable(
   'source/web-server.c',
   'source/state-machine.c',
   'source/states.c',
+  'source/agent-server.c',
   dependencies: [libmicrohttpd, libdbus, libfsautomata],
   install: true,
   c_args: ['-Wall', '-Wextra'],

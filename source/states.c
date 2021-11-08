@@ -27,16 +27,29 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "state-machine.h"
 #include "web-server.h"
+#include "agent-server.h"
 
 int do_state_initializing(int* state __attribute__((unused)),
     void* user_data)
 {
     SoundMachineState* machine = (SoundMachineState*)user_data;
+    memset(machine, 0, sizeof(SoundMachineState));
     printf("Starting web server\n");
+
     machine->web_server = web_server_start();
+    if (NULL == machine->web_server) {
+        return SIGNAL_SHUTDOWN;
+    }
+
+    machine->agent_server = agent_server_start();
+    if (NULL == machine->agent_server) {
+        return SIGNAL_SHUTDOWN;
+    }
+
     return SIGNAL_INITIALIZED;
 }
 
@@ -64,6 +77,7 @@ int do_state_shutdown(int* state __attribute__((unused)), void* user_data) {
     SoundMachineState* machine = (SoundMachineState*)user_data;
     printf("Shutting down\n");
     web_server_stop(&machine->web_server);
+    agent_server_stop(&machine->agent_server);
     return 0;
 }
 

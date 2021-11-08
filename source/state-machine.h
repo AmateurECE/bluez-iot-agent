@@ -62,8 +62,10 @@ int do_state_pairing(int*, void* user_data);
 int do_state_shutdown(int*, void* user_data);
 
 typedef struct WebServer WebServer;
+typedef struct AgentServer AgentServer;
 typedef struct SoundMachineState {
     WebServer* web_server;
+    AgentServer* agent_server;
 } SoundMachineState;
 
 typedef struct MealyFsm MealyFsm;
