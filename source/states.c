@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/07/2021
+// LAST EDITED:     11/08/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -33,6 +33,18 @@
 #include "web-server.h"
 #include "agent-server.h"
 
+static void default_log_handler(enum LogLevel level, const char* message) {
+    switch (level) {
+    case INFO:
+    case WARNING:
+        printf("%s", message);
+        break;
+    case ERROR:
+        fprintf(stderr, "%s", message);
+        break;
+    }
+}
+
 int do_state_initializing(int* state __attribute__((unused)),
     void* user_data)
 {
@@ -45,7 +57,8 @@ int do_state_initializing(int* state __attribute__((unused)),
         return SIGNAL_SHUTDOWN;
     }
 
-    machine->agent_server = agent_server_start();
+    logger_initialize(&machine->logger, default_log_handler);
+    machine->agent_server = agent_server_start(&machine->logger);
     if (NULL == machine->agent_server) {
         return SIGNAL_SHUTDOWN;
     }

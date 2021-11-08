@@ -28,6 +28,8 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
+#include "logger.h"
+
 enum States {
     STATE_INVALID,
     STATE_INITIALIZING,
@@ -66,6 +68,7 @@ typedef struct AgentServer AgentServer;
 typedef struct SoundMachineState {
     WebServer* web_server;
     AgentServer* agent_server;
+    Logger logger;
 } SoundMachineState;
 
 typedef struct MealyFsm MealyFsm;

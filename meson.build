@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('bluez-soundsystem-agent', 'c')
+project('bluez-soundsystem-agent', 'c', version: '0.1.0')
 libmicrohttpd = dependency('libmicrohttpd')
 libdbus = dependency('dbus-1')
 libfsautomata = dependency('libfsautomata')
@@ -36,6 +36,7 @@ executable(
   'source/state-machine.c',
   'source/states.c',
   'source/agent-server.c',
+  'source/logger.c',
   dependencies: [libmicrohttpd, libdbus, libfsautomata],
   install: true,
   c_args: ['-Wall', '-Wextra'],

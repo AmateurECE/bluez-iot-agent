@@ -1,10 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            agent-server.h
+// NAME:            logger.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     This server connects to D-Bus and configures bluez to
-//                  route pairing and authorization requests to itself.
+// DESCRIPTION:     Implementation for logging infrastructure
 //
 // CREATED:         11/07/2021
 //
@@ -26,23 +25,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef AGENT_SERVER_H
-#define AGENT_SERVER_H
+#include "logger.h"
 
-typedef struct DBusError DBusError;
-typedef struct DBusConnection DBusConnection;
-typedef struct Logger Logger;
-typedef struct AgentServer {
-    DBusError* error;
-    DBusConnection* connection;
-    Logger* logger;
-} AgentServer;
-
-static const char* BUS_NAME = "org.soundsystem.agent";
-
-AgentServer* agent_server_start(Logger* logger);
-void agent_server_stop(AgentServer** server);
-
-#endif // AGENT_SERVER_H
+void logger_initialize(Logger* logger, UserLogHandler* handler) {
+    logger->handler = handler;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
