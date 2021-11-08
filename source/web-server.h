@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/07/2021
+// LAST EDITED:     11/08/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,12 +31,14 @@
 static const int HTTP_PORT = 8888;
 
 struct MHD_Daemon;
+typedef struct Logger Logger;
 
 typedef struct WebServer {
     struct MHD_Daemon* daemon;
+    Logger* logger;
 } WebServer;
 
-WebServer* web_server_start();
+WebServer* web_server_start(Logger* logger);
 void web_server_stop(WebServer** server);
 
 #endif // WEB_SERVER_H

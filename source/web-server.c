@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/07/2021
+// LAST EDITED:     11/08/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -35,6 +35,7 @@
 #include <microhttpd.h>
 
 #include "web-server.h"
+#include "logger.h"
 
 static enum MHD_Result answer_to_connection(void* cls,
     struct MHD_Connection* connection, const char* url, const char* method,
@@ -50,24 +51,27 @@ static enum MHD_Result answer_to_connection(void* cls,
     return result;
 }
 
-WebServer* web_server_start() {
+WebServer* web_server_start(Logger* logger) {
     WebServer* server = malloc(sizeof(WebServer));
     if (NULL == server) {
         return NULL;
     }
 
+    server->logger = logger;
     server->daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
         HTTP_PORT, NULL, NULL, &answer_to_connection, NULL, MHD_OPTION_END);
     if (NULL == server->daemon) {
         free(server);
         return NULL;
     }
+    LOG_INFO(logger, "Web server started successfully");
 
     return server;
 }
 
 void web_server_stop(WebServer** server) {
     if (NULL != *server) {
+        LOG_INFO((*server)->logger, "Stopping web server");
         MHD_stop_daemon((*server)->daemon);
         free(*server);
         *server = NULL;

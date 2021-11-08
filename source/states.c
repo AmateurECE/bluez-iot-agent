@@ -50,14 +50,13 @@ int do_state_initializing(int* state __attribute__((unused)),
 {
     SoundMachineState* machine = (SoundMachineState*)user_data;
     memset(machine, 0, sizeof(SoundMachineState));
-    printf("Starting web server\n");
 
-    machine->web_server = web_server_start();
+    logger_initialize(&machine->logger, default_log_handler);
+    machine->web_server = web_server_start(&machine->logger);
     if (NULL == machine->web_server) {
         return SIGNAL_SHUTDOWN;
     }
 
-    logger_initialize(&machine->logger, default_log_handler);
     machine->agent_server = agent_server_start(&machine->logger);
     if (NULL == machine->agent_server) {
         return SIGNAL_SHUTDOWN;
