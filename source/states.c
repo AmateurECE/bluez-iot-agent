@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -60,10 +60,10 @@ int do_state_initializing(int* state __attribute__((unused)),
         return SIGNAL_SHUTDOWN;
     }
 
-    /* machine->agent_server = agent_server_start(&machine->logger); */
-    /* if (NULL == machine->agent_server) { */
-    /*     return SIGNAL_SHUTDOWN; */
-    /* } */
+    machine->agent_server = agent_server_start(&machine->logger);
+    if (NULL == machine->agent_server) {
+        return SIGNAL_SHUTDOWN;
+    }
 
     return SIGNAL_INITIALIZED;
 }

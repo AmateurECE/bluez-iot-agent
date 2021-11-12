@@ -7,7 +7,7 @@
 //
 // CREATED:         11/11/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -54,7 +54,8 @@ int bluez_register_agent(AgentServer* server) {
     // Append arguments to message
     if (!dbus_message_append_args(message,
             DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT,
-            DBUS_TYPE_STRING, &AGENT_CAPABILITY)) {
+            DBUS_TYPE_STRING, &AGENT_CAPABILITY,
+            DBUS_TYPE_INVALID)) {
         LOG_ERROR(logger, "out of memory");
         dbus_message_unref(message);
         return 1;
@@ -107,7 +108,8 @@ int bluez_make_default_agent(AgentServer* server __attribute__((unused))) {
     }
 
     if (!dbus_message_append_args(message,
-            DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT)) {
+            DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT,
+            DBUS_TYPE_INVALID)) {
         LOG_ERROR(logger, "out of memory");
         dbus_message_unref(message);
         return 1;

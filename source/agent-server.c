@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -89,7 +89,7 @@ AgentServer* agent_server_start(Logger* logger) {
         return NULL;
     }
 
-    LOG_INFO(logger, "Requesting default-agent title");
+    LOG_INFO(logger, "Requesting default-agent");
     if (0 != bluez_make_default_agent(server)) {
         free(server->error);
         free(server);
