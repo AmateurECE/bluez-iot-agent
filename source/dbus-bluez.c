@@ -52,13 +52,9 @@ int bluez_register_agent(AgentServer* server) {
     }
 
     // Append arguments to message
-    DBusMessageIter arguments;
-    dbus_message_iter_init_append(message, &arguments);
-    // TODO: This needs to be an object path
-    if (!dbus_message_iter_append_basic(&arguments, DBUS_TYPE_OBJECT_PATH,
-            &AGENT_OBJECT)
-        || !dbus_message_iter_append_basic(&arguments, DBUS_TYPE_STRING,
-            &AGENT_CAPABILITY)) {
+    if (!dbus_message_append_args(message,
+            DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT,
+            DBUS_TYPE_STRING, &AGENT_CAPABILITY)) {
         LOG_ERROR(logger, "out of memory");
         dbus_message_unref(message);
         return 1;
@@ -77,7 +73,6 @@ int bluez_register_agent(AgentServer* server) {
         return 1;
     }
     dbus_connection_flush(server->connection);
-
     dbus_message_unref(message);
 
     // If something bad happened, we'll get a response with a string back.
@@ -89,15 +84,12 @@ int bluez_register_agent(AgentServer* server) {
     }
     dbus_pending_call_unref(pending);
 
-    if (DBUS_MESSAGE_TYPE_ERROR == dbus_message_get_type(message)) {
-        dbus_set_error_from_message(server->error, message);
+    if (dbus_set_error_from_message(server->error, message)) {
         const char* error_name = dbus_message_get_error_name(message);
         dbus_message_unref(message);
-
         LOG_ERROR(logger, "Got D-Bus Error while attempting to register agent:"
             " (%s) %s", error_name, server->error->message);
         dbus_error_free(server->error);
-
         return 1;
     }
 
@@ -106,7 +98,57 @@ int bluez_register_agent(AgentServer* server) {
 }
 
 int bluez_make_default_agent(AgentServer* server __attribute__((unused))) {
-    return -1;
+    DBusMessage* message = dbus_message_new_method_call(ORG_BLUEZ_SERVICE,
+        ORG_BLUEZ_OBJECT, AGENT_MANAGER_INTERFACE, "RequestDefaultAgent");
+    Logger* logger = server->logger;
+    if (NULL == message) {
+        LOG_ERROR(logger, "dbus message is null");
+        return 1;
+    }
+
+    if (!dbus_message_append_args(message,
+            DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT)) {
+        LOG_ERROR(logger, "out of memory");
+        dbus_message_unref(message);
+        return 1;
+    }
+
+    // TODO: Basically from here, this can be a generic static method
+    DBusPendingCall* pending;
+    if (!dbus_connection_send_with_reply(server->connection, message, &pending,
+            -1)) {
+        LOG_ERROR(logger, "out of memory");
+        dbus_message_unref(message);
+        return 1;
+    }
+    if (NULL == pending) {
+        LOG_ERROR(logger, "out of memory");
+        dbus_message_unref(message);
+        return 1;
+    }
+    dbus_connection_flush(server->connection);
+    dbus_message_unref(message);
+
+    // Wait for a response
+    dbus_pending_call_block(pending);
+    message = dbus_pending_call_steal_reply(pending);
+    if (NULL == message) {
+        LOG_ERROR(logger, "out of memory");
+        return 1;
+    }
+    dbus_pending_call_unref(pending);
+
+    if (dbus_set_error_from_message(server->error, message)) {
+        const char* error_name = dbus_message_get_error_name(message);
+        dbus_message_unref(message);
+        LOG_ERROR(logger, "Got D-Bus Error while attempting to register agent:"
+            " (%s) %s", error_name, server->error->message);
+        dbus_error_free(server->error);
+        return 1;
+    }
+
+    dbus_message_unref(message);
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

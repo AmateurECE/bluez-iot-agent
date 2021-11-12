@@ -89,6 +89,13 @@ AgentServer* agent_server_start(Logger* logger) {
         return NULL;
     }
 
+    LOG_INFO(logger, "Requesting default-agent title");
+    if (0 != bluez_make_default_agent(server)) {
+        free(server->error);
+        free(server);
+        return NULL;
+    }
+
     return server;
 }
 
