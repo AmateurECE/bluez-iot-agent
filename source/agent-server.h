@@ -8,7 +8,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/07/2021
+// LAST EDITED:     11/11/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -37,8 +37,6 @@ typedef struct AgentServer {
     DBusConnection* connection;
     Logger* logger;
 } AgentServer;
-
-static const char* BUS_NAME = "org.soundsystem.agent";
 
 AgentServer* agent_server_start(Logger* logger);
 void agent_server_stop(AgentServer** server);

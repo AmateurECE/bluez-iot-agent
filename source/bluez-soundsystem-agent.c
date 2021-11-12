@@ -7,7 +7,7 @@
 //
 // CREATED:         11/05/2021
 //
-// LAST EDITED:     11/07/2021
+// LAST EDITED:     11/11/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,7 +31,7 @@
 
 #include "state-machine.h"
 
-int main(int argc, char** argv) {
+int main() {
     SoundStateMachine* state_machine = state_machine_initialize();
 
     int result = state_machine_execute(state_machine);

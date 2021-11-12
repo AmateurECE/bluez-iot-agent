@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/08/2021
+// LAST EDITED:     11/11/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -34,6 +34,8 @@
 
 #include "agent-server.h"
 #include "logger.h"
+
+static const char* SERVICE_BUS_NAME = "org.soundsystem.agent";
 
 static const char* ORG_BLUEZ_SERVICE = "org.bluez";
 static const char* ORG_BLUEZ_OBJECT = "/org/bluez";
@@ -141,7 +143,7 @@ AgentServer* agent_server_start(Logger* logger) {
     }
 
     // Request a name on the bus
-    int result = dbus_bus_request_name(server->connection, BUS_NAME,
+    int result = dbus_bus_request_name(server->connection, SERVICE_BUS_NAME,
         DBUS_NAME_FLAG_REPLACE_EXISTING, server->error);
     if (dbus_error_is_set(server->error)) {
         LOG_ERROR(logger, "name error: %s", server->error->message);

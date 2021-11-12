@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/08/2021
+// LAST EDITED:     11/11/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -44,7 +44,7 @@ static const size_t MAX_MESSAGE_SIZE = 256;
         char error_log_message[MAX_MESSAGE_SIZE];                       \
         snprintf(error_log_message, MAX_MESSAGE_SIZE, message "\n"      \
             __VA_OPT__(,) __VA_ARGS__);                                 \
-        logger->handler(level, error_log_message);                      \
+        (logger)->handler((level), error_log_message);                  \
     }
 
 #define LOG_ERROR(logger, message, ...) {                               \
