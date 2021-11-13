@@ -48,9 +48,7 @@ static void default_log_handler(enum LogLevel level, const char* message) {
     }
 }
 
-int do_state_initializing(int* state __attribute__((unused)),
-    void* user_data)
-{
+int do_state_initializing(int* state, void* user_data) {
     SoundMachineState* machine = (SoundMachineState*)user_data;
     memset(machine, 0, sizeof(SoundMachineState));
 
@@ -69,9 +67,7 @@ int do_state_initializing(int* state __attribute__((unused)),
 }
 
 // Just for now, wait for 30 seconds, then trigger a shutdown.
-int do_state_connection_wait(int* state __attribute__((unused)),
-    void* user_data __attribute__((unused)))
-{
+int do_state_connection_wait(int* state, void* user_data) {
     SoundMachineState* machine = (SoundMachineState*)user_data;
     static const int MAX_EVENTS = 10;
     int epoll_fd = epoll_create1(0);
@@ -113,21 +109,15 @@ int do_state_connection_wait(int* state __attribute__((unused)),
     return SIGNAL_SHUTDOWN;
 }
 
-int do_state_connected(int* state __attribute__((unused)),
-    void* user_data __attribute__((unused)))
-{
+int do_state_connected(int* state, void* user_data) {
     return SIGNAL_SHUTDOWN;
 }
 
-int do_state_pairing(int* state __attribute__((unused)),
-    void* user_data __attribute__((unused)))
-{
+int do_state_pairing(int* state, void* user_data) {
     return SIGNAL_SHUTDOWN;
 }
 
-int do_state_shutdown(int* state __attribute__((unused)),
-    void* user_data __attribute__((unused)))
-{
+int do_state_shutdown(int* state, void* user_data) {
     SoundMachineState* machine = (SoundMachineState*)user_data;
     printf("Shutting down\n");
     web_server_stop(&machine->web_server);

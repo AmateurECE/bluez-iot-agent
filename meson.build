@@ -49,7 +49,7 @@ executable(
   sources: agent_files,
   dependencies: [libmicrohttpd, libdbus, libfsautomata],
   install: true,
-  c_args: ['-Wall', '-Wextra'],
+  c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
 )
 
 # Install dbus policy

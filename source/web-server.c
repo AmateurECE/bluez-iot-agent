@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -38,13 +38,10 @@
 #include "web-server.h"
 #include "logger.h"
 
-static enum MHD_Result answer_to_connection(void* cls __attribute__((unused)),
-    struct MHD_Connection* connection, const char* url __attribute__((unused)),
-    const char* method __attribute__((unused)),
-    const char* version __attribute__((unused)),
-    const char* upload_data __attribute__((unused)),
-    size_t* upload_data_size __attribute__((unused)),
-    void** con_cls __attribute__((unused)))
+static enum MHD_Result answer_to_connection(void* cls,
+    struct MHD_Connection* connection, const char* url, const char* method,
+    const char* version, const char* upload_data, size_t* upload_data_size,
+    void** con_cls)
 {
     const char* page = "<html><body>Hello, browser!</body></html>";
     struct MHD_Response* response = MHD_create_response_from_buffer(

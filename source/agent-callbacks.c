@@ -32,46 +32,44 @@
 
 #include "agent-callbacks.h"
 
-dbus_bool_t agent_add_watch_function(DBusWatch* watch __attribute__((unused)),
-    void* data __attribute__((unused)))
-{
+///////////////////////////////////////////////////////////////////////////////
+// Watch Callbacks
+////
+
+dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data) {
     return TRUE;
 }
 
-void agent_watch_toggled_function(DBusWatch* watch __attribute__((unused)),
-    void* data __attribute__((unused)))
+void agent_watch_toggled_function(DBusWatch* watch, void* user_data)
 {}
 
-void agent_remove_watch_function(DBusWatch* watch __attribute__((unused)),
-    void* data __attribute__((unused)))
+void agent_remove_watch_function(DBusWatch* watch, void* user_data)
 {}
 
-dbus_bool_t agent_add_timeout_function(
-    DBusTimeout* timeout __attribute__((unused)),
-    void* data __attribute__((unused)))
-{
+///////////////////////////////////////////////////////////////////////////////
+// Timeout Callbacks
+////
+
+dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data) {
     return TRUE;
 }
 
-void agent_remove_timeout_function(
-    DBusTimeout* timeout __attribute__((unused)),
-    void* data __attribute__((unused)))
+void agent_remove_timeout_function(DBusTimeout* timeout, void* user_data)
 {}
 
-void agent_timeout_toggled_function(
-    DBusTimeout* timeout __attribute__((unused)),
-    void* data __attribute__((unused)))
+void agent_timeout_toggled_function(DBusTimeout* timeout, void* user_data)
 {}
 
-void agent_object_path_unregister_function(
-    DBusConnection* connection __attribute__((unused)),
-    void* user_data __attribute__((unused)))
+///////////////////////////////////////////////////////////////////////////////
+// Object Path Callbacks
+////
+
+void agent_object_path_unregister_function(DBusConnection* connection,
+    void* user_data)
 {}
 
 DBusHandlerResult agent_object_path_message_function(
-    DBusConnection* connection __attribute__((unused)),
-    DBusMessage* message __attribute__((unused)),
-    void* user_data __attribute__((unused)))
+    DBusConnection* connection, DBusMessage* message, void* user_data)
 {
     printf("Tested!\n");
     return DBUS_HANDLER_RESULT_HANDLED;

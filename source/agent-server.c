@@ -75,14 +75,14 @@ static DBusConnection* agent_setup_dbus_connection(Logger* logger,
 static int agent_setup_dbus_interface(AgentServer* server) {
     if (!dbus_connection_set_timeout_functions(server->connection,
             agent_add_timeout_function, agent_remove_timeout_function,
-            agent_timeout_toggled_function, NULL, NULL)) {
+            agent_timeout_toggled_function, server, NULL)) {
         LOG_ERROR(server->logger, "out of memory");
         return 1;
     }
 
     if (!dbus_connection_set_watch_functions(server->connection,
             agent_add_watch_function, agent_remove_watch_function,
-            agent_watch_toggled_function, NULL, NULL)) {
+            agent_watch_toggled_function, server, NULL)) {
         LOG_ERROR(server->logger, "out of memory");
         return 1;
     }
