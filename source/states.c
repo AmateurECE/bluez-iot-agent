@@ -87,6 +87,15 @@ int do_state_connection_wait(int* state, void* user_data) {
         return SIGNAL_SHUTDOWN;
     }
 
+    event.events = EPOLLIN;
+    int agent_fd = agent_server_get_epoll_fd(machine->agent_server);
+    event.data.fd = agent_fd;
+    if (-1 == epoll_ctl(epoll_fd, EPOLL_CTL_ADD, agent_fd, &event)) {
+        LOG_ERROR(&machine->logger,
+            "Couldn't register agent server socket: %s", strerror(errno));
+        return SIGNAL_SHUTDOWN;
+    }
+
     // Main loop
     struct epoll_event events[MAX_EVENTS];
     while (1) {
@@ -96,12 +105,17 @@ int do_state_connection_wait(int* state, void* user_data) {
         }
 
         for (int i = 0; i < number_of_fds; ++i) {
+            int result = 1;
             if (events[i].data.fd == web_fd) {
-                int result = web_server_dispatch(machine->web_server,
+                result = web_server_dispatch(machine->web_server,
                     events[i].events);
-                if (0 != result) {
-                    return SIGNAL_SHUTDOWN;
-                }
+            } else if (events[i].data.fd == agent_fd) {
+                result = agent_server_dispatch(machine->agent_server,
+                    events[i].events);
+            }
+
+            if (0 != result) {
+                return SIGNAL_SHUTDOWN;
             }
         }
     }

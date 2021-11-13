@@ -8,7 +8,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -29,6 +29,8 @@
 #ifndef AGENT_SERVER_H
 #define AGENT_SERVER_H
 
+#include <stdint.h>
+
 typedef struct DBusError DBusError;
 typedef struct DBusConnection DBusConnection;
 typedef struct Logger Logger;
@@ -36,9 +38,19 @@ typedef struct AgentServer {
     DBusError* error;
     DBusConnection* connection;
     Logger* logger;
+    int epoll_fd;
 } AgentServer;
 
+// Start up the server (attach to D-Bus, get a name, become default agent)
 AgentServer* agent_server_start(Logger* logger);
+
+// Get a file descriptor that can be used with epoll_wait to wait for events
+int agent_server_get_epoll_fd(AgentServer* server);
+
+// Dispatch a request, to handle the epoll event set in events.
+int agent_server_dispatch(AgentServer* server, uint32_t events);
+
+// Stop the server
 void agent_server_stop(AgentServer** server);
 
 #endif // AGENT_SERVER_H
