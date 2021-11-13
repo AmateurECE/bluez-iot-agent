@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/12/2021
+# LAST EDITED:      11/13/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -31,6 +31,7 @@ project('bluez-soundsystem-agent', 'c', version: '0.1.0')
 libmicrohttpd = dependency('libmicrohttpd')
 libdbus = dependency('dbus-1')
 libfsautomata = dependency('libfsautomata')
+libseastar = dependency('libseastar')
 
 # Source Files
 agent_files = files([
@@ -47,7 +48,7 @@ agent_files = files([
 executable(
   'bluez-soundsystem-agent',
   sources: agent_files,
-  dependencies: [libmicrohttpd, libdbus, libfsautomata],
+  dependencies: [libmicrohttpd, libdbus, libfsautomata, libseastar],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
 )

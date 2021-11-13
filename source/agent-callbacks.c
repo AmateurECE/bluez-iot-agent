@@ -7,7 +7,7 @@
 //
 // CREATED:         11/12/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/13/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -32,10 +32,17 @@
 
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
+#include <libseastar/vector.h>
+#include <libseastar/error.h>
 
 #include "agent-callbacks.h"
 #include "agent-server.h"
 #include "logger.h"
+
+typedef struct AgentWatch {
+    DBusWatch* watch;
+    int fd;
+} AgentWatch;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Watch Callbacks
@@ -44,6 +51,43 @@
 dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data) {
     AgentServer* server = (AgentServer*)user_data;
     int watch_fd = dbus_watch_get_unix_fd(watch);
+    int option = EPOLL_CTL_ADD;
+
+    // If we've already added this watcher, we only need to modify its entry
+    // in the epoll watch table.
+    Iterator iter = cs_vector_iter(&server->watches);
+    void* element = NULL;
+    while (NULL != (element = cs_iter_next(&iter))) {
+        const AgentWatch* watch_entry = (const AgentWatch*)element;
+        if (watch_entry->fd == watch_fd) {
+            option = EPOLL_CTL_MOD;
+        }
+    }
+
+    AgentWatch* watch_entry = NULL;
+    if (EPOLL_CTL_ADD == option) {
+        watch_entry = malloc(sizeof(AgentWatch));
+        if (NULL == watch_entry) {
+            LOG_ERROR(server->logger, "out of memory");
+            return FALSE;
+        }
+
+        watch_entry->fd = watch_fd;
+        watch_entry->watch = watch;
+        IndexResult result = cs_vector_push_back(&server->watches,
+            watch_entry);
+        if (!result.ok) {
+            if (result.error & SEASTAR_ERRNO_SET) {
+                LOG_ERROR(server->logger, "Could not append to watch list: %s",
+                    strerror(result.error ^ SEASTAR_ERRNO_SET));
+            } else {
+                LOG_ERROR(server->logger, "Could not append to watch list: %s",
+                    cs_strerror(result.error));
+            }
+            free(watch_entry);
+            return FALSE;
+        }
+    }
 
     struct epoll_event event = {0};
     event.data.fd = watch_fd;
@@ -55,9 +99,12 @@ dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data) {
     if (flags & DBUS_WATCH_WRITABLE) {
         event.events = EPOLLOUT;
     }
-    if (-1 == epoll_ctl(server->epoll_fd, EPOLL_CTL_ADD, watch_fd, &event)) {
+    if (-1 == epoll_ctl(server->epoll_fd, option, watch_fd, &event)) {
         LOG_ERROR(server->logger, "Couldn't register watch socket: %s",
             strerror(errno));
+        if (NULL != watch_entry) {
+            free(watch_entry);
+        }
         return FALSE;
     }
     return TRUE;
@@ -75,8 +122,37 @@ void agent_watch_toggled_function(DBusWatch* watch, void* user_data)
 void agent_remove_watch_function(DBusWatch* watch, void* user_data)
 {
     AgentServer* server = (AgentServer*)user_data;
-    if (-1 == epoll_ctl(server->epoll_fd, EPOLL_CTL_DEL,
-            dbus_watch_get_unix_fd(watch), NULL)) {
+    int watch_fd = dbus_watch_get_unix_fd(watch);
+
+    Iterator iter = cs_vector_iter(&server->watches);
+    size_t index = 0;
+    AgentWatch* element = NULL;
+    while(NULL != (element = (AgentWatch*)cs_iter_next(&iter))) {
+        if (element->fd == watch_fd) {
+            break;
+        }
+        ++index;
+    }
+
+    // Remove element from the vector
+    PointerResult result = cs_vector_remove(&server->watches, index);
+    if (!result.ok) {
+        if (result.error & SEASTAR_ERRNO_SET) {
+            LOG_ERROR(server->logger, "Could not remove from watch list: %s",
+                strerror(result.error ^ SEASTAR_ERRNO_SET));
+        } else {
+            LOG_ERROR(server->logger, "Could not remove from watch list: %s",
+                cs_strerror(result.error));
+        }
+        return;
+    }
+    if (result.value != element) {
+        LOG_ERROR(server->logger, "Vector removed the wrong element!");
+        return;
+    }
+    free(element);
+
+    if (-1 == epoll_ctl(server->epoll_fd, EPOLL_CTL_DEL, watch_fd, NULL)) {
         LOG_ERROR(server->logger, "Couldn't deregister watch socket: %s",
             strerror(errno));
     }

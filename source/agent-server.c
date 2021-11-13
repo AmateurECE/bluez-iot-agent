@@ -33,6 +33,8 @@
 
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
+#include <libseastar/vector.h>
+#include <libseastar/error.h>
 
 #include "agent-callbacks.h"
 #include "agent-server.h"
@@ -115,48 +117,59 @@ AgentServer* agent_server_start(Logger* logger) {
     if (-1 == server->epoll_fd) {
         LOG_ERROR(logger, "Couldn't create an epoll file descriptor: %s",
             strerror(errno));
-        free(server);
-        return NULL;
+        goto error_epoll_create;
+    }
+
+    VoidResult result = cs_vector_init(&server->watches);
+    if (!result.ok) {
+        if (result.error & SEASTAR_ERRNO_SET) {
+            LOG_ERROR(logger, "Failure initializing vector: %s",
+                strerror(result.error ^ SEASTAR_ERRNO_SET));
+        } else {
+            LOG_ERROR(logger, "Failure initializing vector: %s",
+                cs_strerror(result.error));
+        }
+        goto error_vector_init;
     }
 
     server->error = malloc(sizeof(DBusError));
     if (NULL == server->error) {
-        close(server->epoll_fd);
-        free(server);
-        return NULL;
+        goto error_malloc;
     }
 
     dbus_error_init(server->error);
     server->connection = agent_setup_dbus_connection(logger, server->error);
     if (NULL == server->connection) {
-        close(server->epoll_fd);
-        free(server->error);
-        free(server);
-        return NULL;
+        goto error_dbus_connect;
     }
 
     LOG_INFO(logger, "Setting up Agent interface");
     if (0 != agent_setup_dbus_interface(server)) {
-        goto error_encountered;
+        goto error_dbus_setup;
     }
 
     LOG_INFO(logger, "Registering the agent with org.bluez");
     if (0 != bluez_register_agent(server, AGENT_OBJECT_PATH,
             AGENT_CAPABILITY)) {
-        goto error_encountered;
+        goto error_dbus_setup;
     }
 
     LOG_INFO(logger, "Requesting default-agent");
     if (0 != bluez_make_default_agent(server, AGENT_OBJECT_PATH)) {
-        goto error_encountered;
+        goto error_dbus_setup;
     }
 
     return server;
 
- error_encountered:
+ error_dbus_setup:
     dbus_connection_unref(server->connection);
-    close(server->epoll_fd);
+ error_dbus_connect:
     free(server->error);
+ error_malloc:
+    cs_vector_free(&server->watches);
+ error_vector_init:
+    close(server->epoll_fd);
+ error_epoll_create:
     free(server);
     return NULL;
 }

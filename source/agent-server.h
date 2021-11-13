@@ -8,7 +8,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/13/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,14 +31,19 @@
 
 #include <stdint.h>
 
+#include <libseastar/vector.h>
+
+// Forward declarations
 typedef struct DBusError DBusError;
 typedef struct DBusConnection DBusConnection;
 typedef struct Logger Logger;
+
 typedef struct AgentServer {
     DBusError* error;
     DBusConnection* connection;
     Logger* logger;
     int epoll_fd;
+    Vector watches;
 } AgentServer;
 
 // Start up the server (attach to D-Bus, get a name, become default agent)
