@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/11/2021
+# LAST EDITED:      11/12/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -39,6 +39,7 @@ agent_files = files([
   'source/state-machine.c',
   'source/states.c',
   'source/agent-server.c',
+  'source/agent-callbacks.c',
   'source/logger.c',
   'source/dbus-bluez.c',
 ])

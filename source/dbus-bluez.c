@@ -37,12 +37,11 @@ static const char* ORG_BLUEZ_SERVICE = "org.bluez";
 static const char* ORG_BLUEZ_OBJECT = "/org/bluez";
 static const char* AGENT_MANAGER_INTERFACE = "org.bluez.AgentManager1";
 
-static const char* AGENT_OBJECT = "/org/bluez/agent";
-static const char* AGENT_CAPABILITY = "NoInputNoOutput";
-
 // Assuming that server is on the bus, invoke the RegisterAgent() method of
 // org.bluez service to register an agent for ourselves.
-int bluez_register_agent(AgentServer* server) {
+int bluez_register_agent(AgentServer* server, const char* object_path,
+    const char* capability)
+{
     DBusMessage* message = dbus_message_new_method_call(ORG_BLUEZ_SERVICE,
         ORG_BLUEZ_OBJECT, AGENT_MANAGER_INTERFACE, "RegisterAgent");
     Logger* logger = server->logger;
@@ -53,8 +52,8 @@ int bluez_register_agent(AgentServer* server) {
 
     // Append arguments to message
     if (!dbus_message_append_args(message,
-            DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT,
-            DBUS_TYPE_STRING, &AGENT_CAPABILITY,
+            DBUS_TYPE_OBJECT_PATH, &object_path,
+            DBUS_TYPE_STRING, &capability,
             DBUS_TYPE_INVALID)) {
         LOG_ERROR(logger, "out of memory");
         dbus_message_unref(message);
@@ -98,7 +97,7 @@ int bluez_register_agent(AgentServer* server) {
     return 0;
 }
 
-int bluez_make_default_agent(AgentServer* server __attribute__((unused))) {
+int bluez_make_default_agent(AgentServer* server, const char* object_path) {
     DBusMessage* message = dbus_message_new_method_call(ORG_BLUEZ_SERVICE,
         ORG_BLUEZ_OBJECT, AGENT_MANAGER_INTERFACE, "RequestDefaultAgent");
     Logger* logger = server->logger;
@@ -108,7 +107,7 @@ int bluez_make_default_agent(AgentServer* server __attribute__((unused))) {
     }
 
     if (!dbus_message_append_args(message,
-            DBUS_TYPE_OBJECT_PATH, &AGENT_OBJECT,
+            DBUS_TYPE_OBJECT_PATH, &object_path,
             DBUS_TYPE_INVALID)) {
         LOG_ERROR(logger, "out of memory");
         dbus_message_unref(message);

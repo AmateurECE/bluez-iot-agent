@@ -1,11 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            dbus-bluez.h
+// NAME:            agent-callbacks.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     D-Bus interface to the BlueZ Daemon
+// DESCRIPTION:     Callbacks used with the AgentServer.
 //
-// CREATED:         11/11/2021
+// CREATED:         11/12/2021
 //
 // LAST EDITED:     11/12/2021
 //
@@ -25,15 +25,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef DBUS_BLUEZ_H
-#define DBUS_BLUEZ_H
+#ifndef AGENT_CALLBACKS_H
+#define AGENT_CALLBACKS_H
 
-#include "agent-server.h"
+#define DBUS_API_SUBJECT_TO_CHANGE
+#include <dbus/dbus.h>
 
-int bluez_register_agent(AgentServer* server, const char* object_path,
-    const char* capability);
-int bluez_make_default_agent(AgentServer* server, const char* object_path);
+dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data);
+void agent_watch_toggled_function(DBusWatch* watch, void* user_data);
+void agent_remove_watch_function(DBusWatch* watch, void* user_data);
 
-#endif // DBUS_BLUEZ_H
+dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data);
+void agent_remove_timeout_function(DBusTimeout* timeout, void* user_data);
+void agent_timeout_toggled_function(DBusTimeout* timeout, void* user_data);
+
+void agent_object_path_unregister_function(DBusConnection* connection,
+    void* user_data);
+DBusHandlerResult agent_object_path_message_function(
+    DBusConnection* connection, DBusMessage* message, void* user_data);
+
+#endif // AGENT_CALLBACKS_H
 
 ///////////////////////////////////////////////////////////////////////////////
