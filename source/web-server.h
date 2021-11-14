@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -46,7 +46,7 @@ typedef struct WebServer {
 ///
 
 // Start up the web server
-WebServer* web_server_start(Logger* logger);
+int web_server_start(WebServer* server, Logger* logger);
 
 // Get a file descriptor that can be used with epoll_wait to wait for events
 int web_server_get_epoll_fd(WebServer* server);
@@ -55,7 +55,7 @@ int web_server_get_epoll_fd(WebServer* server);
 int web_server_dispatch(WebServer* server, uint32_t events);
 
 // Stop the web server
-void web_server_stop(WebServer** server);
+void web_server_stop(WebServer* server);
 
 #endif // WEB_SERVER_H
 

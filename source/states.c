@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -53,8 +53,12 @@ int do_state_initializing(int* state, void* user_data) {
     memset(machine, 0, sizeof(SoundMachineState));
 
     logger_initialize(&machine->logger, default_log_handler);
-    machine->web_server = web_server_start(&machine->logger);
+    machine->web_server = malloc(sizeof(WebServer));
     if (NULL == machine->web_server) {
+        LOG_ERROR(&machine->logger, "Couldn't allocate web server!");
+        return SIGNAL_SHUTDOWN;
+    }
+    if (0 != web_server_start(machine->web_server, &machine->logger)) {
         return SIGNAL_SHUTDOWN;
     }
 
@@ -134,8 +138,12 @@ int do_state_pairing(int* state, void* user_data) {
 int do_state_shutdown(int* state, void* user_data) {
     SoundMachineState* machine = (SoundMachineState*)user_data;
     printf("Shutting down\n");
-    web_server_stop(&machine->web_server);
-    agent_server_stop(&machine->agent_server);
+    if (NULL != machine->web_server) {
+        web_server_stop(machine->web_server);
+    }
+    if (NULL != machine->agent_server) {
+        agent_server_stop(&machine->agent_server);
+    }
     return 0;
 }
 
