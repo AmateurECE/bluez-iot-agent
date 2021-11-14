@@ -32,6 +32,7 @@
 #include <stdint.h>
 
 #include <libseastar/vector.h>
+#include <libseastar/pqueue.h>
 
 // Forward declarations
 typedef struct DBusError DBusError;
@@ -43,7 +44,8 @@ typedef struct AgentServer {
     DBusConnection* connection;
     Logger* logger;
     int epoll_fd;
-    Vector watches;
+    Vector* watches;
+    PriorityQueue* timeouts;
 } AgentServer;
 
 // Start up the server (attach to D-Bus, get a name, become default agent)

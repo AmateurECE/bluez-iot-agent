@@ -55,7 +55,7 @@ dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data) {
 
     // If we've already added this watcher, we only need to modify its entry
     // in the epoll watch table.
-    Iterator iter = cs_vector_iter(&server->watches);
+    Iterator iter = cs_vector_iter(server->watches);
     void* element = NULL;
     while (NULL != (element = cs_iter_next(&iter))) {
         const AgentWatch* watch_entry = (const AgentWatch*)element;
@@ -74,7 +74,7 @@ dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data) {
 
         watch_entry->fd = watch_fd;
         watch_entry->watch = watch;
-        IndexResult result = cs_vector_push_back(&server->watches,
+        IndexResult result = cs_vector_push_back(server->watches,
             watch_entry);
         if (!result.ok) {
             if (result.error & SEASTAR_ERRNO_SET) {
@@ -124,7 +124,7 @@ void agent_remove_watch_function(DBusWatch* watch, void* user_data)
     AgentServer* server = (AgentServer*)user_data;
     int watch_fd = dbus_watch_get_unix_fd(watch);
 
-    Iterator iter = cs_vector_iter(&server->watches);
+    Iterator iter = cs_vector_iter(server->watches);
     size_t index = 0;
     AgentWatch* element = NULL;
     while(NULL != (element = (AgentWatch*)cs_iter_next(&iter))) {
@@ -135,7 +135,7 @@ void agent_remove_watch_function(DBusWatch* watch, void* user_data)
     }
 
     // Remove element from the vector
-    PointerResult result = cs_vector_remove(&server->watches, index);
+    PointerResult result = cs_vector_remove(server->watches, index);
     if (!result.ok) {
         if (result.error & SEASTAR_ERRNO_SET) {
             LOG_ERROR(server->logger, "Could not remove from watch list: %s",

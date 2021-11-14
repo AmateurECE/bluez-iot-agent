@@ -120,7 +120,14 @@ AgentServer* agent_server_start(Logger* logger) {
         goto error_epoll_create;
     }
 
-    VoidResult result = cs_vector_init(&server->watches);
+    server->watches = malloc(sizeof(Vector));
+    if (NULL == server->watches) {
+        LOG_ERROR(logger, "Couldn't allocate container for watches: %s",
+            strerror(errno));
+        goto error_malloc_watches;
+    }
+
+    VoidResult result = cs_vector_init(server->watches);
     if (!result.ok) {
         if (result.error & SEASTAR_ERRNO_SET) {
             LOG_ERROR(logger, "Failure initializing vector: %s",
@@ -134,7 +141,7 @@ AgentServer* agent_server_start(Logger* logger) {
 
     server->error = malloc(sizeof(DBusError));
     if (NULL == server->error) {
-        goto error_malloc;
+        goto error_malloc_error;
     }
 
     dbus_error_init(server->error);
@@ -165,8 +172,10 @@ AgentServer* agent_server_start(Logger* logger) {
     dbus_connection_unref(server->connection);
  error_dbus_connect:
     free(server->error);
- error_malloc:
-    cs_vector_free(&server->watches);
+ error_malloc_error:
+    cs_vector_free(server->watches);
+ error_malloc_watches:
+    free(server->watches);
  error_vector_init:
     close(server->epoll_fd);
  error_epoll_create:
@@ -191,9 +200,11 @@ void agent_server_stop(AgentServer** server) {
         return;
     }
 
-    close((*server)->epoll_fd);
     dbus_connection_unref((*server)->connection);
     free((*server)->error);
+    cs_vector_free((*server)->watches);
+    free((*server)->watches);
+    close((*server)->epoll_fd);
     free(*server);
     *server = NULL;
 }
