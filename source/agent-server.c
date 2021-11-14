@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/13/2021
+// LAST EDITED:     11/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -111,7 +111,6 @@ AgentServer* agent_server_start(Logger* logger) {
         return NULL;
     }
 
-    // Finally, initialize an epoll file descriptor
     server->logger = logger;
     server->epoll_fd = epoll_create(1);
     if (-1 == server->epoll_fd) {
@@ -137,6 +136,25 @@ AgentServer* agent_server_start(Logger* logger) {
                 cs_strerror(result.error));
         }
         goto error_vector_init;
+    }
+
+    server->timeouts = malloc(sizeof(PriorityQueue));
+    if (NULL == server->timeouts) {
+        LOG_ERROR(logger, "Failure initializing timeout queue: %s",
+            strerror(errno));
+        goto error_malloc_timeouts;
+    }
+
+    result = cs_pqueue_init(server->timeouts, agent_timeout_comparator);
+    if (!result.ok) {
+        if (result.error & SEASTAR_ERRNO_SET) {
+            LOG_ERROR(logger, "failure to initialize pqueue: %s",
+                strerror(result.error ^ SEASTAR_ERRNO_SET));
+        } else {
+            LOG_ERROR(logger, "Failure initializing timeout queue: %s",
+                cs_strerror(result.error));
+        }
+        goto error_pqueue_init;
     }
 
     server->error = malloc(sizeof(DBusError));
@@ -173,6 +191,10 @@ AgentServer* agent_server_start(Logger* logger) {
  error_dbus_connect:
     free(server->error);
  error_malloc_error:
+    cs_pqueue_free(server->timeouts);
+ error_pqueue_init:
+    free(server->timeouts);
+ error_malloc_timeouts:
     cs_vector_free(server->watches);
  error_malloc_watches:
     free(server->watches);
@@ -202,6 +224,8 @@ void agent_server_stop(AgentServer** server) {
 
     dbus_connection_unref((*server)->connection);
     free((*server)->error);
+    cs_pqueue_free((*server)->timeouts);
+    free((*server)->timeouts);
     cs_vector_free((*server)->watches);
     free((*server)->watches);
     close((*server)->epoll_fd);

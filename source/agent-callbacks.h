@@ -7,7 +7,7 @@
 //
 // CREATED:         11/12/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -35,6 +35,7 @@ dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data);
 void agent_watch_toggled_function(DBusWatch* watch, void* user_data);
 void agent_remove_watch_function(DBusWatch* watch, void* user_data);
 
+int agent_timeout_comparator(const void* one, const void* two);
 dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data);
 void agent_remove_timeout_function(DBusTimeout* timeout, void* user_data);
 void agent_timeout_toggled_function(DBusTimeout* timeout, void* user_data);

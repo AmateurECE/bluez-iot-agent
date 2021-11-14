@@ -7,7 +7,7 @@
 //
 // CREATED:         11/12/2021
 //
-// LAST EDITED:     11/13/2021
+// LAST EDITED:     11/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -39,6 +39,7 @@
 #include "agent-server.h"
 #include "logger.h"
 
+// TODO: Don't put this struct in the vector, only the DBusWatch?
 typedef struct AgentWatch {
     DBusWatch* watch;
     int fd;
@@ -161,6 +162,12 @@ void agent_remove_watch_function(DBusWatch* watch, void* user_data)
 ///////////////////////////////////////////////////////////////////////////////
 // Timeout Callbacks
 ////
+
+int agent_timeout_comparator(const void* one, const void* two) {
+    /* DBusTimeout* first = *(DBusTimeout**)one; */
+    /* DBusTimeout* second = *(DBusTimeout**)two; */
+    return 0;
+}
 
 dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data) {
     return TRUE;
