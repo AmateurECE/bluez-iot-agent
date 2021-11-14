@@ -8,7 +8,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/13/2021
+// LAST EDITED:     11/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -45,7 +45,8 @@ typedef struct AgentServer {
     Logger* logger;
     int epoll_fd;
     Vector* watches;
-    PriorityQueue* timeouts;
+    Vector* timeouts;
+    int timeout_id;
 } AgentServer;
 
 // Start up the server (attach to D-Bus, get a name, become default agent)

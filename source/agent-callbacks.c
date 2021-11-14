@@ -164,19 +164,88 @@ void agent_remove_watch_function(DBusWatch* watch, void* user_data)
 ////
 
 int agent_timeout_comparator(const void* one, const void* two) {
-    /* DBusTimeout* first = *(DBusTimeout**)one; */
-    /* DBusTimeout* second = *(DBusTimeout**)two; */
-    return 0;
+    DBusTimeout* first = *(DBusTimeout**)one;
+    DBusTimeout* second = *(DBusTimeout**)two;
+    int first_interval = dbus_timeout_get_interval(first);
+    int second_interval = dbus_timeout_get_interval(second);
+    if (first_interval < second_interval) {
+        return -1;
+    } else if (first_interval == second_interval) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data) {
+    AgentServer* server = (AgentServer*)user_data;
+    int* timer_id = malloc(sizeof(int));
+    if (NULL == timer_id) {
+        LOG_ERROR(server->logger, "Couldn't allocate memory for timer ID: %s",
+            strerror(errno));
+        return FALSE;
+    }
+
+    IndexResult result = cs_vector_push_back(server->timeouts, timeout);
+    if (!result.ok) {
+        if (result.error & SEASTAR_ERRNO_SET) {
+            LOG_ERROR(server->logger, "Couldn't add timer to queue: %s",
+                strerror(result.error ^ SEASTAR_ERRNO_SET));
+        } else {
+            LOG_ERROR(server->logger, "Couldn't add timer to queue: %s",
+                cs_strerror(result.error));
+        }
+        free(timer_id);
+        return FALSE;
+    }
+
+    // Do this last to make sure we don't leave an int* hanging around if this
+    // fails
+    *timer_id = server->timeout_id++;
+    dbus_timeout_set_data(timeout, timer_id, NULL);
     return TRUE;
 }
 
 void agent_remove_timeout_function(DBusTimeout* timeout, void* user_data)
-{}
+{
+    AgentServer* server = (AgentServer*)user_data;
+    Iterator iterator = cs_vector_iter(server->timeouts);
+    DBusTimeout* element = NULL;
+    int* element_timer_id = NULL;
+    int* timeout_id = dbus_timeout_get_data(timeout);
+    int index = 0;
+    while (NULL != (element = cs_iter_next(&iterator))) {
+        element_timer_id = dbus_timeout_get_data(element);
+        if (NULL == element_timer_id) {
+            LOG_ERROR(server->logger, "Internal Error: DBusTimeout instance "
+                "doesn't have an associated timer_id!");
+            return;
+        }
+        if (*element_timer_id == *timeout_id) {
+            break;
+        }
+        ++index;
+    }
 
-void agent_timeout_toggled_function(DBusTimeout* timeout, void* user_data)
+    PointerResult result = cs_vector_remove(server->timeouts, index);
+    if (!result.ok) {
+        if (result.error & SEASTAR_ERRNO_SET) {
+            LOG_ERROR(server->logger, "Couldn't remove timer from list: %s",
+                strerror(result.error ^ SEASTAR_ERRNO_SET));
+        } else {
+            LOG_ERROR(server->logger, "Couldn't remove timer from list: %s",
+                cs_strerror(result.error));
+        }
+        return;
+    }
+    free(timeout_id);
+    dbus_timeout_set_data(timeout, NULL, NULL);
+}
+
+// Don't currently have a reason to implement this?
+void agent_timeout_toggled_function(
+    DBusTimeout* timeout __attribute__((unused)),
+    void* user_data __attribute__((unused)))
 {}
 
 ///////////////////////////////////////////////////////////////////////////////

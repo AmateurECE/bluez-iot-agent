@@ -138,23 +138,23 @@ AgentServer* agent_server_start(Logger* logger) {
         goto error_vector_init;
     }
 
-    server->timeouts = malloc(sizeof(PriorityQueue));
+    server->timeouts = malloc(sizeof(Vector));
     if (NULL == server->timeouts) {
-        LOG_ERROR(logger, "Failure initializing timeout queue: %s",
+        LOG_ERROR(logger, "Failure initializing timer list: %s",
             strerror(errno));
         goto error_malloc_timeouts;
     }
 
-    result = cs_pqueue_init(server->timeouts, agent_timeout_comparator);
+    result = cs_vector_init(server->timeouts);
     if (!result.ok) {
         if (result.error & SEASTAR_ERRNO_SET) {
-            LOG_ERROR(logger, "failure to initialize pqueue: %s",
+            LOG_ERROR(logger, "Failure to initialize timer list: %s",
                 strerror(result.error ^ SEASTAR_ERRNO_SET));
         } else {
-            LOG_ERROR(logger, "Failure initializing timeout queue: %s",
+            LOG_ERROR(logger, "Failure initializing timer list: %s",
                 cs_strerror(result.error));
         }
-        goto error_pqueue_init;
+        goto error_timers_init;
     }
 
     server->error = malloc(sizeof(DBusError));
@@ -191,8 +191,8 @@ AgentServer* agent_server_start(Logger* logger) {
  error_dbus_connect:
     free(server->error);
  error_malloc_error:
-    cs_pqueue_free(server->timeouts);
- error_pqueue_init:
+    cs_vector_free(server->timeouts);
+ error_timers_init:
     free(server->timeouts);
  error_malloc_timeouts:
     cs_vector_free(server->watches);
@@ -224,7 +224,7 @@ void agent_server_stop(AgentServer** server) {
 
     dbus_connection_unref((*server)->connection);
     free((*server)->error);
-    cs_pqueue_free((*server)->timeouts);
+    cs_vector_free((*server)->timeouts);
     free((*server)->timeouts);
     cs_vector_free((*server)->watches);
     free((*server)->watches);
