@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/14/2021
+// LAST EDITED:     11/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -52,13 +52,18 @@ static enum MHD_Result answer_to_connection(void* cls,
     return result;
 }
 
-int web_server_start(WebServer* server, Logger* logger) {
+WebServer* web_server_start(Logger* logger) {
+    WebServer* server = malloc(sizeof(WebServer));
+    if (NULL == server) {
+        return NULL;
+    }
+
     server->logger = logger;
     server->daemon = MHD_start_daemon(MHD_USE_EPOLL, HTTP_PORT, NULL, NULL,
         &answer_to_connection, NULL, MHD_OPTION_END);
     if (NULL == server->daemon) {
-        LOG_ERROR(logger, "Couldn't start web server!");
-        return 1;
+        free(server);
+        return NULL;
     }
     LOG_INFO(logger, "Web server started successfully");
 
@@ -74,7 +79,7 @@ int web_server_start(WebServer* server, Logger* logger) {
     // max_fd is the epoll fd.
     server->epoll_fd = max_fd;
 
-    return 0;
+    return server;
 }
 
 int web_server_get_epoll_fd(WebServer* server) {
@@ -103,10 +108,12 @@ int web_server_dispatch(WebServer* server, uint32_t events) {
     return 0;
 }
 
-void web_server_stop(WebServer* server) {
-    LOG_INFO(server->logger, "Stopping web server");
-    if (NULL != server->daemon) {
-        MHD_stop_daemon(server->daemon);
+void web_server_stop(WebServer** server) {
+    if (NULL != *server) {
+        LOG_INFO((*server)->logger, "Stopping web server");
+        MHD_stop_daemon((*server)->daemon);
+        free(*server);
+        *server = NULL;
     }
 }
 
