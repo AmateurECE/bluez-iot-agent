@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            dbus-bluez.c
+// NAME:            bluez-proxy.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
@@ -7,7 +7,7 @@
 //
 // CREATED:         11/11/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/15/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,21 +25,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <errno.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 
-#include "dbus-bluez.h"
-#include "logger.h"
+#include <bluez-proxy.h>
+#include <logger.h>
 
 static const char* ORG_BLUEZ_SERVICE = "org.bluez";
 static const char* ORG_BLUEZ_OBJECT = "/org/bluez";
 static const char* AGENT_MANAGER_INTERFACE = "org.bluez.AgentManager1";
 
+///////////////////////////////////////////////////////////////////////////////
+// Private API
+////
+
 // Assuming that server is on the bus, invoke the RegisterAgent() method of
 // org.bluez service to register an agent for ourselves.
-int bluez_register_agent(AgentServer* server, const char* object_path,
+static int register_agent(BluezProxy* server, const char* object_path,
     const char* capability)
 {
     DBusMessage* message = dbus_message_new_method_call(ORG_BLUEZ_SERVICE,
@@ -97,7 +104,8 @@ int bluez_register_agent(AgentServer* server, const char* object_path,
     return 0;
 }
 
-int bluez_make_default_agent(AgentServer* server, const char* object_path) {
+static int request_default_agent(BluezProxy* server, const char* object_path)
+{
     DBusMessage* message = dbus_message_new_method_call(ORG_BLUEZ_SERVICE,
         ORG_BLUEZ_OBJECT, AGENT_MANAGER_INTERFACE, "RequestDefaultAgent");
     Logger* logger = server->logger;
@@ -150,6 +158,38 @@ int bluez_make_default_agent(AgentServer* server, const char* object_path) {
 
     dbus_message_unref(message);
     return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+////
+
+BluezProxy* bluez_proxy_initialize(Logger* logger, DBusConnection* connection,
+    DBusError* error)
+{
+    BluezProxy* proxy = malloc(sizeof(BluezProxy));
+    if (NULL == proxy) {
+        LOG_ERROR(logger, "Failed to allocate memory for BlueZ proxy: %s",
+            strerror(errno));
+    }
+
+    proxy->RegisterAgent = register_agent;
+    proxy->RequestDefaultAgent = request_default_agent;
+    proxy->connection = connection;
+    proxy->error = error;
+    proxy->logger = logger;
+    return proxy;
+}
+
+DBusError* bluez_proxy_get_error(BluezProxy* proxy) {
+    return proxy->error;
+}
+
+void bluez_proxy_free(BluezProxy** proxy) {
+    if (NULL != *proxy) {
+        free(*proxy);
+        *proxy = NULL;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            dbus-bluez.h
+// NAME:            bluez-proxy.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
@@ -7,7 +7,7 @@
 //
 // CREATED:         11/11/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/15/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,15 +25,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef DBUS_BLUEZ_H
-#define DBUS_BLUEZ_H
+#ifndef BLUEZ_PROXY_H
+#define BLUEZ_PROXY_H
 
-#include "agent-server.h"
+// Forward declarations
+typedef struct DBusConnection DBusConnection;
+typedef struct DBusError DBusError;
+typedef struct Logger Logger;
+typedef struct BluezProxy BluezProxy;
 
-int bluez_register_agent(AgentServer* server, const char* object_path,
-    const char* capability);
-int bluez_make_default_agent(AgentServer* server, const char* object_path);
+typedef struct BluezProxy {
+    // Public interface
+    int (*RegisterAgent)(BluezProxy* proxy, const char* object_path,
+        const char* capability);
+    int (*RequestDefaultAgent)(BluezProxy* proxy, const char* object_path);
 
-#endif // DBUS_BLUEZ_H
+    // "Private" data
+    DBusConnection* connection;
+    DBusError* error;
+    Logger* logger;
+} BluezProxy;
+
+BluezProxy* bluez_proxy_initialize(Logger* logger, DBusConnection* connection,
+    DBusError* error);
+DBusError* bluez_proxy_get_error(BluezProxy* proxy);
+void bluez_proxy_free(BluezProxy** proxy);
+
+#endif // BLUEZ_PROXY_H
 
 ///////////////////////////////////////////////////////////////////////////////
