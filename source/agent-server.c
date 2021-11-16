@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/14/2021
+// LAST EDITED:     11/16/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -41,7 +41,6 @@
 #include "dbus-bluez.h"
 #include "logger.h"
 
-static const char* SERVICE_BUS_NAME = "org.soundsystem.agent";
 static const char* AGENT_OBJECT_PATH = "/org/bluez/agent";
 static const char* AGENT_CAPABILITY = "NoInputNoOutput";
 
@@ -50,34 +49,6 @@ static const DBusObjectPathVTable agent_object_interface = {
     .message_function = agent_object_path_message_function,
     0,
 };
-
-// Obtain a connection to the bus and request our service name
-static DBusConnection* agent_setup_dbus_connection(Logger* logger,
-    DBusError* error)
-{
-    // Get a connection to the bus
-    DBusConnection* connection = dbus_bus_get(DBUS_BUS_SYSTEM, error);
-    if (dbus_error_is_set(error)) {
-        LOG_ERROR(logger, "connection error: %s", error->message);
-        dbus_error_free(error);
-    }
-    if (NULL == connection) {
-        return NULL;
-    }
-
-    // Request a name on the bus
-    int result = dbus_bus_request_name(connection, SERVICE_BUS_NAME,
-        DBUS_NAME_FLAG_REPLACE_EXISTING, error);
-    if (dbus_error_is_set(error)) {
-        LOG_ERROR(logger, "name error: %s", error->message);
-        dbus_error_free(error);
-    }
-    if (DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER != result) {
-        dbus_connection_unref(connection);
-        return NULL;
-    }
-    return connection;
-}
 
 // Register the object path implementing the org.bluez.Agent1 interface
 static int agent_setup_dbus_interface(AgentServer* server) {

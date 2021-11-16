@@ -7,7 +7,7 @@
 //
 // CREATED:         11/05/2021
 //
-// LAST EDITED:     11/15/2021
+// LAST EDITED:     11/16/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -29,12 +29,16 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define DBUS_API_SUBJECT_TO_CHANGE
+#include <dbus/dbus.h>
 #include <ev.h>
 
-#include <web-server.h>
+#include <bluez-proxy.h>
 #include <logger.h>
+#include <web-server.h>
 
 static const int HTTP_PORT = 8888;
+static const char* SERVICE_NAME = "org.bluez.iot-agent";
 
 static void exit_signal_callback(struct ev_loop* loop, ev_signal* watcher,
     int signal_name)
@@ -55,12 +59,57 @@ static void default_log_handler(enum LogLevel level, const char* message) {
     }
 }
 
+static DBusConnection* open_dbus_connection(Logger* logger, DBusError* error,
+    const char* service_name)
+{
+    // Get a connection to the bus
+    DBusConnection* connection = dbus_bus_get(DBUS_BUS_SYSTEM, error);
+    if (dbus_error_is_set(error)) {
+        LOG_ERROR(logger, "connection error: %s", error->message);
+        dbus_error_free(error);
+    }
+    if (NULL == connection) {
+        return NULL;
+    }
+
+    // Request a name on the bus
+    int result = dbus_bus_request_name(connection, service_name,
+        DBUS_NAME_FLAG_REPLACE_EXISTING, error);
+    if (dbus_error_is_set(error)) {
+        LOG_ERROR(logger, "name error: %s", error->message);
+        dbus_error_free(error);
+    }
+    if (DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER != result) {
+        dbus_connection_unref(connection);
+        return NULL;
+    }
+    return connection;
+}
+
 int main() {
     // Use the standard event loop
     struct ev_loop* loop = EV_DEFAULT;
 
     Logger logger;
     logger_initialize(&logger, default_log_handler);
+
+    // Open D-Bus connection
+    DBusError error;
+    dbus_error_init(&error);
+
+    DBusConnection* connection = open_dbus_connection(&logger, &error,
+        SERVICE_NAME);
+    if (NULL == connection) {
+        return 1;
+    }
+
+    // Prepare AgentServer
+    BluezProxy* bluez_proxy = bluez_proxy_initialize(&logger, connection,
+        &error);
+    if (NULL == bluez_proxy) {
+        dbus_connection_unref(connection);
+        return 1;
+    }
 
     // web server initialization
     WebServer* web_server = web_server_start(&logger, HTTP_PORT);
@@ -77,6 +126,8 @@ int main() {
     ev_run(loop, 0);
 
     web_server_stop(&web_server);
+    bluez_proxy_free(&bluez_proxy);
+    dbus_connection_unref(connection);
     return 0;
 }
 
