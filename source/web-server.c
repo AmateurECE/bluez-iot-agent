@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/12/2021
+// LAST EDITED:     11/15/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -33,11 +33,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <ev.h>
 #include <microhttpd.h>
 
 #include "web-server.h"
 #include "logger.h"
 
+// Callback for libmicrohttpd to respond to connections
 static enum MHD_Result answer_to_connection(void* cls,
     struct MHD_Connection* connection, const char* url, const char* method,
     const char* version, const char* upload_data, size_t* upload_data_size,
@@ -52,14 +54,39 @@ static enum MHD_Result answer_to_connection(void* cls,
     return result;
 }
 
-WebServer* web_server_start(Logger* logger) {
+static void web_server_dispatch(struct ev_loop* loop, ev_io* watcher,
+    int events)
+{
+    WebServer* server = (WebServer*)watcher->data;
+    fd_set read, write;
+    int max_fd = server->epoll_fd;
+    if (events & EV_READ) {
+        FD_SET(max_fd, &read);
+    }
+    if (events & EV_WRITE) {
+        FD_SET(max_fd, &write);
+    }
+
+    enum MHD_Result result = MHD_run_from_select(server->daemon, &read, &write,
+        NULL);
+    if (MHD_YES != result) {
+        LOG_ERROR(server->logger, "Something bad happened in run loop");
+        ev_break(loop, EVBREAK_ALL);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+////
+
+WebServer* web_server_start(Logger* logger, int port) {
     WebServer* server = malloc(sizeof(WebServer));
     if (NULL == server) {
         return NULL;
     }
 
     server->logger = logger;
-    server->daemon = MHD_start_daemon(MHD_USE_EPOLL, HTTP_PORT, NULL, NULL,
+    server->daemon = MHD_start_daemon(MHD_USE_EPOLL, port, NULL, NULL,
         &answer_to_connection, NULL, MHD_OPTION_END);
     if (NULL == server->daemon) {
         free(server);
@@ -76,36 +103,17 @@ WebServer* web_server_start(Logger* logger) {
     }
 
     // In our case (using epoll(7)), only the epoll fd is set in each set. So,
-    // max_fd is the epoll fd.
+    // max_fd is the epoll fd. Then, add this fd to the watcher.
     server->epoll_fd = max_fd;
+    ev_init(&server->watcher, web_server_dispatch);
+    ev_io_set(&server->watcher, server->epoll_fd, EV_READ | EV_WRITE);
+    server->watcher.data = server;
 
     return server;
 }
 
-int web_server_get_epoll_fd(WebServer* server) {
-    return server->epoll_fd;
-}
-
-int web_server_dispatch(WebServer* server, uint32_t events) {
-    fd_set read, write, except;
-    int max_fd = server->epoll_fd;
-    if (events & EPOLLIN) {
-        FD_SET(max_fd, &read);
-    }
-    if (events & EPOLLOUT) {
-        FD_SET(max_fd, &write);
-    }
-    if (events & (EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP)) {
-        FD_SET(max_fd, &except);
-    }
-
-    enum MHD_Result result = MHD_run_from_select(server->daemon, &read, &write,
-        &except);
-    if (MHD_YES != result) {
-        LOG_ERROR(server->logger, "Something bad happened in run loop");
-        return 1;
-    }
-    return 0;
+ev_io* web_server_get_watcher(WebServer* server) {
+    return &server->watcher;
 }
 
 void web_server_stop(WebServer** server) {

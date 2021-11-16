@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            bluez-soundsystem-agent.c
+// NAME:            bluez-iot-agent.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
@@ -7,7 +7,7 @@
 //
 // CREATED:         11/05/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/15/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,18 +25,41 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
-#include "state-machine.h"
+#include <ev.h>
+
+#include <web-server.h>
+#include <logger.h>
+
+static const int HTTP_PORT = 8888;
+
+static void default_log_handler(enum LogLevel level, const char* message) {
+    switch (level) {
+    case INFO:
+    case WARNING:
+        printf("%s", message);
+        break;
+    case ERROR:
+        fprintf(stderr, "%s", message);
+        break;
+    }
+}
 
 int main() {
-    SoundStateMachine* state_machine = state_machine_initialize();
+    // Use the standard event loop
+    struct ev_loop* loop = EV_DEFAULT;
 
-    int result = state_machine_execute(state_machine);
-    state_machine_finish(&state_machine);
-    return result;
+    Logger logger;
+    logger_initialize(&logger, default_log_handler);
+    WebServer* web_server = web_server_start(&logger, HTTP_PORT);
+    ev_io* web_watcher = web_server_get_watcher(web_server);
+    ev_io_start(loop, web_watcher);
+    ev_run(loop, 0);
+    web_server_stop(&web_server);
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/11/2021
+// LAST EDITED:     11/15/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,9 +28,8 @@
 #ifndef WEB_SERVER_H
 #define WEB_SERVER_H
 
+#include <ev.h>
 #include <stdint.h>
-
-static const int HTTP_PORT = 8888;
 
 struct MHD_Daemon;
 typedef struct Logger Logger;
@@ -39,6 +38,7 @@ typedef struct WebServer {
     struct MHD_Daemon* daemon;
     Logger* logger;
     int epoll_fd;
+    ev_io watcher;
 } WebServer;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -46,13 +46,10 @@ typedef struct WebServer {
 ///
 
 // Start up the web server
-WebServer* web_server_start(Logger* logger);
+WebServer* web_server_start(Logger* logger, int port);
 
 // Get a file descriptor that can be used with epoll_wait to wait for events
-int web_server_get_epoll_fd(WebServer* server);
-
-// Dispatch a request, to handle the epoll event set in events.
-int web_server_dispatch(WebServer* server, uint32_t events);
+ev_io* web_server_get_watcher(WebServer* server);
 
 // Stop the web server
 void web_server_stop(WebServer** server);

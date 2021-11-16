@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/13/2021
+# LAST EDITED:      11/15/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('bluez-soundsystem-agent', 'c', version: '0.1.0')
+project('bluez-iot-agent', 'c', version: '0.1.0')
 
 # Dependencies
 libmicrohttpd = dependency('libmicrohttpd')
@@ -35,27 +35,29 @@ libseastar = dependency('libseastar')
 
 # Source Files
 agent_files = files([
-  'source/bluez-soundsystem-agent.c',
+  'source/bluez-iot-agent.c',
   'source/web-server.c',
-  'source/state-machine.c',
-  'source/states.c',
-  'source/agent-server.c',
-  'source/agent-callbacks.c',
   'source/logger.c',
-  'source/dbus-bluez.c',
+  # 'source/state-machine.c',
+  # 'source/states.c',
+  # 'source/agent-server.c',
+  # 'source/agent-callbacks.c',
+  # 'source/dbus-bluez.c',
 ])
 
 executable(
-  'bluez-soundsystem-agent',
+  'bluez-iot-agent',
   sources: agent_files,
   dependencies: [libmicrohttpd, libdbus, libfsautomata, libseastar],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
+  link_args: ['-lev'],
+  include_directories: ['source'],
 )
 
 # Install dbus policy
 install_data(
-  'dbus-1/bluez-soundsystem-agent.conf',
+  'dbus-1/bluez-iot-agent.conf',
   install_dir: 'share/dbus-1/system.d'
 )
 
