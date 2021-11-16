@@ -30,7 +30,7 @@ project('bluez-iot-agent', 'c', version: '0.1.0')
 # Dependencies
 libmicrohttpd = dependency('libmicrohttpd')
 libdbus = dependency('dbus-1')
-libev = meson.get_compiler('c', native: true).find_library('ev')
+libev = meson.get_compiler('c').find_library('ev')
 
 # Source Files
 agent_files = files([
