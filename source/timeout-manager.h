@@ -1,13 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            agent-callbacks.h
+// NAME:            timeout-manager.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Callbacks used with the AgentServer.
+// DESCRIPTION:     Interface to manage DBus timeouts
 //
-// CREATED:         11/12/2021
+// CREATED:         11/17/2021
 //
-// LAST EDITED:     11/14/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,26 +25,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef AGENT_CALLBACKS_H
-#define AGENT_CALLBACKS_H
-
-#define DBUS_API_SUBJECT_TO_CHANGE
-#include <dbus/dbus.h>
-
-dbus_bool_t agent_add_watch_function(DBusWatch* watch, void* user_data);
-void agent_watch_toggled_function(DBusWatch* watch, void* user_data);
-void agent_remove_watch_function(DBusWatch* watch, void* user_data);
+#ifndef TIMEOUT_MANAGER_H
+#define TIMEOUT_MANAGER_H
 
 int agent_timeout_comparator(const void* one, const void* two);
 dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data);
 void agent_remove_timeout_function(DBusTimeout* timeout, void* user_data);
 void agent_timeout_toggled_function(DBusTimeout* timeout, void* user_data);
 
-void agent_object_path_unregister_function(DBusConnection* connection,
-    void* user_data);
-DBusHandlerResult agent_object_path_message_function(
-    DBusConnection* connection, DBusMessage* message, void* user_data);
-
-#endif // AGENT_CALLBACKS_H
+#endif // TIMEOUT_MANAGER_H
 
 ///////////////////////////////////////////////////////////////////////////////

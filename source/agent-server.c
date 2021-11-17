@@ -7,7 +7,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/16/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,13 +36,17 @@
 #include <libseastar/vector.h>
 #include <libseastar/error.h>
 
-#include "agent-callbacks.h"
-#include "agent-server.h"
-#include "dbus-bluez.h"
-#include "logger.h"
+#include <agent-server.h>
+#include <bluez-proxy.h>
+#include <logger.h>
 
 static const char* AGENT_OBJECT_PATH = "/org/bluez/agent";
 static const char* AGENT_CAPABILITY = "NoInputNoOutput";
+
+static void agent_object_path_unregister_function(DBusConnection* connection,
+    void* user_data);
+static DBusHandlerResult agent_object_path_message_function(
+    DBusConnection* connection, DBusMessage* message, void* user_data);
 
 static const DBusObjectPathVTable agent_object_interface = {
     .unregister_function = agent_object_path_unregister_function,
@@ -50,141 +54,71 @@ static const DBusObjectPathVTable agent_object_interface = {
     0,
 };
 
-// Register the object path implementing the org.bluez.Agent1 interface
-static int agent_setup_dbus_interface(AgentServer* server) {
-    if (!dbus_connection_set_timeout_functions(server->connection,
-            agent_add_timeout_function, agent_remove_timeout_function,
-            agent_timeout_toggled_function, server, NULL)) {
-        LOG_ERROR(server->logger, "out of memory or callback failure");
-        return 1;
-    }
+///////////////////////////////////////////////////////////////////////////////
+// Private Interface
+////
 
-    if (!dbus_connection_set_watch_functions(server->connection,
-            agent_add_watch_function, agent_remove_watch_function,
-            agent_watch_toggled_function, server, NULL)) {
-        LOG_ERROR(server->logger, "out of memory or callback failure");
-        return 1;
-    }
+static void agent_object_path_unregister_function(DBusConnection* connection,
+    void* user_data)
+{}
 
-    if (!dbus_connection_register_object_path(server->connection,
-            AGENT_OBJECT_PATH, &agent_object_interface, server)) {
-        LOG_ERROR(server->logger, "either no memory is available or object "
-            "path is already in use");
-        return 1;
-    }
-    return 0;
+static DBusHandlerResult agent_object_path_message_function(
+    DBusConnection* connection, DBusMessage* message, void* user_data)
+{
+    return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-// Entrypoint for the server.
-AgentServer* agent_server_start(Logger* logger) {
+// Register the org.bluez.Agent1 interface with D-Bus
+/* static int agent_setup_dbus_interface(AgentServer* server, */
+/*     const char* object_path, const DBusObjectPathVTable* interface_vtable) */
+/* { */
+/*     if (!dbus_connection_set_timeout_functions(server->connection, */
+/*             agent_add_timeout_function, agent_remove_timeout_function, */
+/*             agent_timeout_toggled_function, server, NULL)) { */
+/*         LOG_ERROR(server->logger, "out of memory or callback failure"); */
+/*         return 1; */
+/*     } */
+/*     return 0; */
+/* } */
+
+///////////////////////////////////////////////////////////////////////////////
+// Public Interface
+////
+
+AgentServer* agent_server_start(Logger* logger, DBusConnection* connection,
+    DBusError* error, BluezProxy* bluez_proxy, struct ev_loop* event_loop)
+{
     AgentServer* server = malloc(sizeof(AgentServer));
     if (NULL == server) {
         return NULL;
     }
 
     server->logger = logger;
-    server->epoll_fd = epoll_create(1);
-    if (-1 == server->epoll_fd) {
-        LOG_ERROR(logger, "Couldn't create an epoll file descriptor: %s",
-            strerror(errno));
-        goto error_epoll_create;
+    server->connection = connection;
+    server->error = error;
+    server->event_loop = event_loop;
+
+    if (!dbus_connection_register_object_path(server->connection,
+            AGENT_OBJECT_PATH, &agent_object_interface, server)) {
+        LOG_ERROR(server->logger, "either no memory is available or object "
+            "path is already in use");
+        free(server);
+        return NULL;
     }
 
-    server->watches = malloc(sizeof(Vector));
-    if (NULL == server->watches) {
-        LOG_ERROR(logger, "Couldn't allocate container for watches: %s",
-            strerror(errno));
-        goto error_malloc_watches;
-    }
-
-    VoidResult result = cs_vector_init(server->watches);
-    if (!result.ok) {
-        if (result.error & SEASTAR_ERRNO_SET) {
-            LOG_ERROR(logger, "Failure initializing vector: %s",
-                strerror(result.error ^ SEASTAR_ERRNO_SET));
-        } else {
-            LOG_ERROR(logger, "Failure initializing vector: %s",
-                cs_strerror(result.error));
-        }
-        goto error_vector_init;
-    }
-
-    server->timeouts = malloc(sizeof(Vector));
-    if (NULL == server->timeouts) {
-        LOG_ERROR(logger, "Failure initializing timer list: %s",
-            strerror(errno));
-        goto error_malloc_timeouts;
-    }
-
-    result = cs_vector_init(server->timeouts);
-    if (!result.ok) {
-        if (result.error & SEASTAR_ERRNO_SET) {
-            LOG_ERROR(logger, "Failure to initialize timer list: %s",
-                strerror(result.error ^ SEASTAR_ERRNO_SET));
-        } else {
-            LOG_ERROR(logger, "Failure initializing timer list: %s",
-                cs_strerror(result.error));
-        }
-        goto error_timers_init;
-    }
-
-    server->error = malloc(sizeof(DBusError));
-    if (NULL == server->error) {
-        goto error_malloc_error;
-    }
-
-    dbus_error_init(server->error);
-    server->connection = agent_setup_dbus_connection(logger, server->error);
-    if (NULL == server->connection) {
-        goto error_dbus_connect;
-    }
-
-    LOG_INFO(logger, "Setting up Agent interface");
-    if (0 != agent_setup_dbus_interface(server)) {
-        goto error_dbus_setup;
-    }
-
-    LOG_INFO(logger, "Registering the agent with org.bluez");
-    if (0 != bluez_register_agent(server, AGENT_OBJECT_PATH,
+    if (0 != bluez_proxy->RegisterAgent(bluez_proxy, AGENT_OBJECT_PATH,
             AGENT_CAPABILITY)) {
-        goto error_dbus_setup;
+        free(server);
+        return NULL;
     }
 
-    LOG_INFO(logger, "Requesting default-agent");
-    if (0 != bluez_make_default_agent(server, AGENT_OBJECT_PATH)) {
-        goto error_dbus_setup;
+    if (0 != bluez_proxy->RequestDefaultAgent(bluez_proxy,
+            AGENT_OBJECT_PATH)) {
+        free(server);
+        return NULL;
     }
 
     return server;
-
- error_dbus_setup:
-    dbus_connection_unref(server->connection);
- error_dbus_connect:
-    free(server->error);
- error_malloc_error:
-    cs_vector_free(server->timeouts);
- error_timers_init:
-    free(server->timeouts);
- error_malloc_timeouts:
-    cs_vector_free(server->watches);
- error_malloc_watches:
-    free(server->watches);
- error_vector_init:
-    close(server->epoll_fd);
- error_epoll_create:
-    free(server);
-    return NULL;
-}
-
-// Get a file descriptor that can be used with epoll_wait to wait for events
-int agent_server_get_epoll_fd(AgentServer* server) {
-    return server->epoll_fd;
-}
-
-// Dispatch a request, to handle the epoll event set in events.
-int agent_server_dispatch(AgentServer* server, uint32_t events) {
-    printf("agent_server_dispatch called!\n");
-    return 0;
 }
 
 // Free server resources
@@ -193,13 +127,6 @@ void agent_server_stop(AgentServer** server) {
         return;
     }
 
-    dbus_connection_unref((*server)->connection);
-    free((*server)->error);
-    cs_vector_free((*server)->timeouts);
-    free((*server)->timeouts);
-    cs_vector_free((*server)->watches);
-    free((*server)->watches);
-    close((*server)->epoll_fd);
     free(*server);
     *server = NULL;
 }

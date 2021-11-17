@@ -33,6 +33,7 @@
 #include <dbus/dbus.h>
 #include <ev.h>
 
+#include <agent-server.h>
 #include <bluez-proxy.h>
 #include <logger.h>
 #include <web-server.h>
@@ -97,19 +98,24 @@ int main() {
     DBusError error;
     dbus_error_init(&error);
 
+    // Attach to D-Bus and register our name
     DBusConnection* connection = open_dbus_connection(&logger, &error,
         SERVICE_NAME);
     if (NULL == connection) {
         return 1;
     }
 
-    // Prepare AgentServer
+    // Set up BlueZ bus proxy
     BluezProxy* bluez_proxy = bluez_proxy_initialize(&logger, connection,
         &error);
     if (NULL == bluez_proxy) {
         dbus_connection_unref(connection);
         return 1;
     }
+
+    // Set up AgentServer
+    AgentServer* agent_server = agent_server_start(&logger, connection, &error,
+        bluez_proxy, loop);
 
     // web server initialization
     WebServer* web_server = web_server_start(&logger, HTTP_PORT);
@@ -125,6 +131,7 @@ int main() {
     // Run event loop
     ev_run(loop, 0);
 
+    agent_server_stop(&agent_server);
     web_server_stop(&web_server);
     bluez_proxy_free(&bluez_proxy);
     dbus_connection_unref(connection);

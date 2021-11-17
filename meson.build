@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/15/2021
+# LAST EDITED:      11/17/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -38,9 +38,10 @@ agent_files = files([
   'source/web-server.c',
   'source/logger.c',
   'source/bluez-proxy.c',
+  'source/agent-server.c',
+  'source/watch-manager.c',
   # 'source/state-machine.c',
   # 'source/states.c',
-  # 'source/agent-server.c',
   # 'source/agent-callbacks.c',
 ])
 

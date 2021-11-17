@@ -1,14 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            agent-server.h
+// NAME:            watch-manager.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     This server connects to D-Bus and configures bluez to
-//                  route pairing and authorization requests to itself.
+// DESCRIPTION:     Interface to manage DBusWatch instances with libev
 //
-// CREATED:         11/07/2021
+// CREATED:         11/17/2021
 //
-// LAST EDITED:     11/16/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,38 +25,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef AGENT_SERVER_H
-#define AGENT_SERVER_H
-
-#include <stdint.h>
+#ifndef WATCH_MANAGER_H
+#define WATCH_MANAGER_H
 
 // Forward declarations
-typedef struct BluezProxy BluezProxy;
 typedef struct DBusConnection DBusConnection;
 typedef struct DBusError DBusError;
 typedef struct Logger Logger;
-/* typedef struct Vector Vector; */
 struct ev_loop;
 
-typedef struct AgentServer {
-    DBusError* error;
+typedef struct WatchManager {
     DBusConnection* connection;
+    DBusError* error;
     Logger* logger;
     struct ev_loop* event_loop;
-    // Might need these once I begin re-implementing watchers/timeouts?
-    /* Vector* watches; */
-    /* Vector* timeouts; */
-    /* int timeout_id; */
-} AgentServer;
+} WatchManager;
 
-// Start up the server: Register our Agent with the BluezProxy, request to
-// become the default agent. Register our watchers with the event loop.
-AgentServer* agent_server_start(Logger* logger, DBusConnection* connection,
-    DBusError* error, BluezProxy* bluez_proxy, struct ev_loop* event_loop);
+WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
+    DBusError* error, struct ev_loop* event_loop);
+void watch_manager_free(WatchManager** manager);
 
-// Stop the server
-void agent_server_stop(AgentServer** server);
-
-#endif // AGENT_SERVER_H
+#endif // WATCH_MANAGER_H
 
 ///////////////////////////////////////////////////////////////////////////////
