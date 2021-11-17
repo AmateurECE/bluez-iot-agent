@@ -40,12 +40,9 @@
 ////
 
 static dbus_bool_t add_watch_function(DBusWatch* watch, void* user_data)
-{ return FALSE; }
+{ return TRUE; }
 
 static void remove_watch_function(DBusWatch* watch, void* user_data)
-{}
-
-static void watch_toggled_function(DBusWatch* watch, void* user_data)
 {}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -53,7 +50,7 @@ static void watch_toggled_function(DBusWatch* watch, void* user_data)
 ////
 
 WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
-    DBusError* error, struct ev_loop* event_loop)
+    struct ev_loop* event_loop)
 {
     WatchManager* manager = malloc(sizeof(WatchManager));
     if (NULL == manager) {
@@ -62,13 +59,10 @@ WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
     }
 
     manager->logger = logger;
-    manager->connection = connection;
-    manager->error = error;
     manager->event_loop = event_loop;
 
     if (!dbus_connection_set_watch_functions(connection,
-            add_watch_function, remove_watch_function,
-            watch_toggled_function, manager, NULL)) {
+            add_watch_function, remove_watch_function, NULL, manager, NULL)) {
         LOG_ERROR(logger, "out of memory or callback failure");
         free(manager);
         return NULL;

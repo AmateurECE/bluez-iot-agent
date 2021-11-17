@@ -43,15 +43,12 @@ static dbus_bool_t add_timeout_function(DBusTimeout* timeout, void* data)
 static void remove_timeout_function(DBusTimeout* timeout, void* data)
 {}
 
-static void timeout_toggled_function(DBusTimeout* timeout, void* data)
-{}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Public Interface
 ////
 
 TimeoutManager* timeout_manager_init(Logger* logger,
-    DBusConnection* connection, DBusError* error, struct ev_loop* event_loop)
+    DBusConnection* connection, struct ev_loop* event_loop)
 {
     TimeoutManager* manager = malloc(sizeof(TimeoutManager));
     if (NULL == manager) {
@@ -59,13 +56,11 @@ TimeoutManager* timeout_manager_init(Logger* logger,
     }
 
     manager->logger = logger;
-    manager->connection = connection;
-    manager->error = error;
     manager->event_loop = event_loop;
 
-    if (!dbus_connection_set_timeout_functions(manager->connection,
-            add_timeout_function, remove_timeout_function,
-            timeout_toggled_function, manager, NULL)) {
+    if (!dbus_connection_set_timeout_functions(connection,
+            add_timeout_function, remove_timeout_function, NULL,
+            manager, NULL)) {
         LOG_ERROR(manager->logger, "out of memory or callback failure");
         free(manager);
         return NULL;

@@ -46,6 +46,14 @@ agent_files = files([
   # 'source/agent-callbacks.c',
 ])
 
+# Configuration file
+config_data = configuration_data({
+  'version': meson.project_version(),
+  'name': meson.project_name(),
+})
+configure_file(input: 'config.h.in', output: 'config.h',
+               configuration: config_data)
+
 executable(
   'bluez-iot-agent',
   sources: agent_files,

@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            watch-manager.h
+// NAME:            config.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Interface to manage DBusWatch instances with libev
+// DESCRIPTION:     Configuration header for the application
 //
 // CREATED:         11/17/2021
 //
@@ -25,24 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef WATCH_MANAGER_H
-#define WATCH_MANAGER_H
-
-// Forward declarations
-typedef struct DBusConnection DBusConnection;
-typedef struct DBusError DBusError;
-typedef struct Logger Logger;
-struct ev_loop;
-
-typedef struct WatchManager {
-    Logger* logger;
-    struct ev_loop* event_loop;
-} WatchManager;
-
-WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
-    struct ev_loop* event_loop);
-void watch_manager_free(WatchManager** manager);
-
-#endif // WATCH_MANAGER_H
+#define PROGRAM_NAME "@name@"
+#define PROGRAM_VERSION "@version@"
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -25,7 +25,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <argp.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -35,6 +37,7 @@
 
 #include <agent-server.h>
 #include <bluez-proxy.h>
+#include <config.h>
 #include <logger.h>
 #include <timeout-manager.h>
 #include <watch-manager.h>
@@ -42,6 +45,33 @@
 
 static const int HTTP_PORT = 8888;
 static const char* SERVICE_NAME = "org.bluez.iot-agent";
+
+const char* argp_program_version = PROGRAM_NAME " " PROGRAM_VERSION;
+const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
+static char doc[] = "Modern pairing wizard for Bluetooth devices on Linux";
+
+static error_t parse_opt(int key, char* arg, struct argp_state* state);
+static const struct argp_option options[] = {
+    { "no-register-name", 'n', NULL, OPTION_ARG_OPTIONAL,
+      "Don't attempt to register the service name with D-Bus", 0 },
+    { 0 },
+};
+static struct argp argp = { options, parse_opt, NULL, doc, 0, 0, 0 };
+
+static error_t parse_opt(int key, char* arg, struct argp_state* state) {
+    bool* register_name = state->input;
+    switch (key) {
+    case 'n':
+        *register_name = false;
+        break;
+    case ARGP_KEY_END:
+        break;
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+
+    return 0;
+}
 
 static void exit_signal_callback(struct ev_loop* loop, ev_signal* watcher,
     int signal_name)
@@ -76,20 +106,25 @@ static DBusConnection* open_dbus_connection(Logger* logger, DBusError* error,
     }
 
     // Request a name on the bus
-    int result = dbus_bus_request_name(connection, service_name,
-        DBUS_NAME_FLAG_REPLACE_EXISTING, error);
-    if (dbus_error_is_set(error)) {
-        LOG_ERROR(logger, "name error: %s", error->message);
-        dbus_error_free(error);
-    }
-    if (DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER != result) {
-        dbus_connection_unref(connection);
-        return NULL;
+    if (NULL != service_name) {
+        int result = dbus_bus_request_name(connection, service_name,
+            DBUS_NAME_FLAG_REPLACE_EXISTING, error);
+        if (dbus_error_is_set(error)) {
+            LOG_ERROR(logger, "name error: %s", error->message);
+            dbus_error_free(error);
+        }
+        if (DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER != result) {
+            dbus_connection_unref(connection);
+            return NULL;
+        }
     }
     return connection;
 }
 
-int main() {
+int main(int argc, char** argv) {
+    bool register_name = true;
+    argp_parse(&argp, argc, argv, 0, 0, &register_name);
+
     // Use the standard event loop
     struct ev_loop* loop = EV_DEFAULT;
     int result = 0;
@@ -99,22 +134,26 @@ int main() {
     dbus_error_init(&error);
 
     // Attach to D-Bus and register our name
+    const char* service_name = SERVICE_NAME;
+    if (!register_name) {
+        service_name = NULL;
+    }
     DBusConnection* connection = open_dbus_connection(&logger, &error,
-        SERVICE_NAME);
+        service_name);
     if (NULL == connection) {
         return 1;
     }
 
     // Set up Watch/Timeout managers
     WatchManager* watch_manager = watch_manager_init(&logger, connection,
-        &error, loop);
+        loop);
     if (NULL == watch_manager) {
         result = 1;
         goto error_watch_manager;
     }
 
     TimeoutManager* timeout_manager = timeout_manager_init(&logger, connection,
-        &error, loop);
+        loop);
     if (NULL == timeout_manager) {
         result = 1;
         goto error_timeout_manager;
