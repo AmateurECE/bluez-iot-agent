@@ -29,18 +29,18 @@
 #define WATCH_MANAGER_H
 
 // Forward declarations
-typedef struct DBusConnection DBusConnection;
-typedef struct DBusError DBusError;
 typedef struct Logger Logger;
 struct ev_loop;
+typedef unsigned int dbus_bool_t;
 
 typedef struct WatchManager {
     Logger* logger;
     struct ev_loop* event_loop;
+    dbus_bool_t (*AddWatch)(DBusWatch* watch, void* user_data);
+    void (*RemoveWatch)(DBusWatch* watch, void* user_data);
 } WatchManager;
 
-WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
-    struct ev_loop* event_loop);
+WatchManager* watch_manager_init(Logger* logger, struct ev_loop* event_loop);
 void watch_manager_free(WatchManager** manager);
 
 #endif // WATCH_MANAGER_H

@@ -49,9 +49,7 @@ static void remove_watch_function(DBusWatch* watch, void* user_data)
 // Public Interface
 ////
 
-WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
-    struct ev_loop* event_loop)
-{
+WatchManager* watch_manager_init(Logger* logger, struct ev_loop* event_loop) {
     WatchManager* manager = malloc(sizeof(WatchManager));
     if (NULL == manager) {
         LOG_ERROR(logger, "Couldn't allocate memory for WatchManager: %s",
@@ -60,20 +58,13 @@ WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
 
     manager->logger = logger;
     manager->event_loop = event_loop;
-
-    if (!dbus_connection_set_watch_functions(connection,
-            add_watch_function, remove_watch_function, NULL, manager, NULL)) {
-        LOG_ERROR(logger, "out of memory or callback failure");
-        free(manager);
-        return NULL;
-    }
-
+    manager->AddWatch = add_watch_function;
+    manager->RemoveWatch = remove_watch_function;
     return manager;
 }
 
 void watch_manager_free(WatchManager** manager) {
     if (NULL != *manager) {
-        // TODO: Some way to unset the watch functions here?
         free(*manager);
         *manager = NULL;
     }

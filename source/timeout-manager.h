@@ -28,18 +28,21 @@
 #ifndef TIMEOUT_MANAGER_H
 #define TIMEOUT_MANAGER_H
 
-typedef struct DBusConnection DBusConnection;
-typedef struct DBusError DBusError;
+typedef struct DBusTimeout DBusTimeout;
 typedef struct Logger Logger;
 struct ev_loop;
+typedef unsigned int dbus_bool_t;
 
 typedef struct TimeoutManager {
     Logger* logger;
     struct ev_loop* event_loop;
+
+    dbus_bool_t (*AddTimeout)(DBusTimeout* timeout, void* data);
+    void (*RemoveTimeout)(DBusTimeout* timeout, void* data);
 } TimeoutManager;
 
 TimeoutManager* timeout_manager_init(Logger* logger,
-    DBusConnection* connection, struct ev_loop* event_loop);
+    struct ev_loop* event_loop);
 void timeout_manager_free(TimeoutManager** manager);
 
 #endif // TIMEOUT_MANAGER_H

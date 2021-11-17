@@ -121,6 +121,48 @@ static DBusConnection* open_dbus_connection(Logger* logger, DBusError* error,
     return connection;
 }
 
+typedef struct BusEventManagers {
+    bool ok;
+    TimeoutManager* timeout_manager;
+    WatchManager* watch_manager;
+} BusEventManagers;
+
+BusEventManagers setup_managers(Logger* logger, DBusConnection* connection,
+    struct ev_loop* loop)
+{
+    WatchManager* watch_manager = watch_manager_init(logger, loop);
+    if (NULL == watch_manager) {
+        return (BusEventManagers){ .ok=false, 0 };
+    }
+
+    TimeoutManager* timeout_manager = timeout_manager_init(logger, loop);
+    if (NULL == timeout_manager) {
+        watch_manager_free(&watch_manager);
+        return (BusEventManagers){ .ok=false, 0 };
+    }
+
+    if (!dbus_connection_set_timeout_functions(connection,
+            timeout_manager->AddTimeout, timeout_manager->RemoveTimeout, NULL,
+            timeout_manager, NULL)) {
+        LOG_ERROR(logger, "out of memory or callback failure");
+        timeout_manager_free(&timeout_manager);
+        watch_manager_free(&watch_manager);
+        return (BusEventManagers){ .ok=false, 0 };
+    }
+
+    if (!dbus_connection_set_watch_functions(connection,
+            watch_manager->AddWatch, watch_manager->RemoveWatch, NULL,
+            watch_manager, NULL)) {
+        LOG_ERROR(logger, "out of memory or callback failure");
+        timeout_manager_free(&timeout_manager);
+        watch_manager_free(&watch_manager);
+        return (BusEventManagers){ .ok=false, 0 };
+    }
+
+    return (BusEventManagers){ .ok=true, .timeout_manager=timeout_manager,
+        .watch_manager=watch_manager };
+}
+
 int main(int argc, char** argv) {
     bool register_name = true;
     argp_parse(&argp, argc, argv, 0, 0, &register_name);
@@ -145,18 +187,10 @@ int main(int argc, char** argv) {
     }
 
     // Set up Watch/Timeout managers
-    WatchManager* watch_manager = watch_manager_init(&logger, connection,
+    BusEventManagers bus_event_managers = setup_managers(&logger, connection,
         loop);
-    if (NULL == watch_manager) {
-        result = 1;
-        goto error_watch_manager;
-    }
-
-    TimeoutManager* timeout_manager = timeout_manager_init(&logger, connection,
-        loop);
-    if (NULL == timeout_manager) {
-        result = 1;
-        goto error_timeout_manager;
+    if (!bus_event_managers.ok) {
+        goto error_manager_setup;
     }
 
     // Set up BlueZ bus proxy
@@ -199,10 +233,9 @@ int main(int argc, char** argv) {
  error_agent_server:
     bluez_proxy_free(&bluez_proxy);
  error_bluez_proxy:
-    timeout_manager_free(&timeout_manager);
- error_timeout_manager:
-    watch_manager_free(&watch_manager);
- error_watch_manager:
+    timeout_manager_free(&bus_event_managers.timeout_manager);
+    watch_manager_free(&bus_event_managers.watch_manager);
+ error_manager_setup:
     dbus_connection_unref(connection);
     return result;
 }
