@@ -68,19 +68,6 @@ static DBusHandlerResult agent_object_path_message_function(
     return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-// Register the org.bluez.Agent1 interface with D-Bus
-/* static int agent_setup_dbus_interface(AgentServer* server, */
-/*     const char* object_path, const DBusObjectPathVTable* interface_vtable) */
-/* { */
-/*     if (!dbus_connection_set_timeout_functions(server->connection, */
-/*             agent_add_timeout_function, agent_remove_timeout_function, */
-/*             agent_timeout_toggled_function, server, NULL)) { */
-/*         LOG_ERROR(server->logger, "out of memory or callback failure"); */
-/*         return 1; */
-/*     } */
-/*     return 0; */
-/* } */
-
 ///////////////////////////////////////////////////////////////////////////////
 // Public Interface
 ////
@@ -123,12 +110,10 @@ AgentServer* agent_server_start(Logger* logger, DBusConnection* connection,
 
 // Free server resources
 void agent_server_stop(AgentServer** server) {
-    if (NULL == *server) {
-        return;
+    if (NULL != *server) {
+        free(*server);
+        *server = NULL;
     }
-
-    free(*server);
-    *server = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -40,6 +40,7 @@ agent_files = files([
   'source/bluez-proxy.c',
   'source/agent-server.c',
   'source/watch-manager.c',
+  'source/timeout-manager.c',
   # 'source/state-machine.c',
   # 'source/states.c',
   # 'source/agent-callbacks.c',

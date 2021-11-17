@@ -28,10 +28,21 @@
 #ifndef TIMEOUT_MANAGER_H
 #define TIMEOUT_MANAGER_H
 
-int agent_timeout_comparator(const void* one, const void* two);
-dbus_bool_t agent_add_timeout_function(DBusTimeout* timeout, void* user_data);
-void agent_remove_timeout_function(DBusTimeout* timeout, void* user_data);
-void agent_timeout_toggled_function(DBusTimeout* timeout, void* user_data);
+typedef struct DBusConnection DBusConnection;
+typedef struct DBusError DBusError;
+typedef struct Logger Logger;
+struct ev_loop;
+
+typedef struct TimeoutManager {
+    DBusConnection* connection;
+    DBusError* error;
+    Logger* logger;
+    struct ev_loop* event_loop;
+} TimeoutManager;
+
+TimeoutManager* timeout_manager_init(Logger* logger,
+    DBusConnection* connection, DBusError* error, struct ev_loop* event_loop);
+void timeout_manager_free(TimeoutManager** manager);
 
 #endif // TIMEOUT_MANAGER_H
 

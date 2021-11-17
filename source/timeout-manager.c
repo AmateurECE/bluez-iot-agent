@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            watch-manager.c
+// NAME:            timeout-manager.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Implementation of the WatchManager
+// DESCRIPTION:     Implementation of the TimeoutManager interface
 //
 // CREATED:         11/17/2021
 //
@@ -25,40 +25,37 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 
 #include <logger.h>
-#include <watch-manager.h>
+#include <timeout-manager.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private Interface
 ////
 
-static dbus_bool_t add_watch_function(DBusWatch* watch, void* user_data)
-{ return FALSE; }
+static dbus_bool_t add_timeout_function(DBusTimeout* timeout, void* data)
+{ return TRUE; }
 
-static void remove_watch_function(DBusWatch* watch, void* user_data)
+static void remove_timeout_function(DBusTimeout* timeout, void* data)
 {}
 
-static void watch_toggled_function(DBusWatch* watch, void* user_data)
+static void timeout_toggled_function(DBusTimeout* timeout, void* data)
 {}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public Interface
 ////
 
-WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
-    DBusError* error, struct ev_loop* event_loop)
+TimeoutManager* timeout_manager_init(Logger* logger,
+    DBusConnection* connection, DBusError* error, struct ev_loop* event_loop)
 {
-    WatchManager* manager = malloc(sizeof(WatchManager));
+    TimeoutManager* manager = malloc(sizeof(TimeoutManager));
     if (NULL == manager) {
-        LOG_ERROR(logger, "Couldn't allocate memory for WatchManager: %s",
-            strerror(errno));
+        return NULL;
     }
 
     manager->logger = logger;
@@ -66,10 +63,10 @@ WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
     manager->error = error;
     manager->event_loop = event_loop;
 
-    if (!dbus_connection_set_watch_functions(connection,
-            add_watch_function, remove_watch_function,
-            watch_toggled_function, manager, NULL)) {
-        LOG_ERROR(logger, "out of memory or callback failure");
+    if (!dbus_connection_set_timeout_functions(manager->connection,
+            add_timeout_function, remove_timeout_function,
+            timeout_toggled_function, manager, NULL)) {
+        LOG_ERROR(manager->logger, "out of memory or callback failure");
         free(manager);
         return NULL;
     }
@@ -77,9 +74,10 @@ WatchManager* watch_manager_init(Logger* logger, DBusConnection* connection,
     return manager;
 }
 
-void watch_manager_free(WatchManager** manager) {
+void timeout_manager_free(TimeoutManager** manager)
+{
     if (NULL != *manager) {
-        // TODO: Some way to unset the watch functions here?
+        // TODO: Some way to unset timeout functions in the connection here?
         free(*manager);
         *manager = NULL;
     }
