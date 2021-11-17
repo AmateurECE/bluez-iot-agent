@@ -7,7 +7,7 @@
 //
 // CREATED:         11/11/2021
 //
-// LAST EDITED:     11/15/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -164,7 +164,7 @@ static int request_default_agent(BluezProxy* server, const char* object_path)
 // Public API
 ////
 
-BluezProxy* bluez_proxy_initialize(Logger* logger, DBusConnection* connection,
+BluezProxy* bluez_proxy_init(Logger* logger, DBusConnection* connection,
     DBusError* error)
 {
     BluezProxy* proxy = malloc(sizeof(BluezProxy));

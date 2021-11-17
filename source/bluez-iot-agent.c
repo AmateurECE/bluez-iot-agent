@@ -7,7 +7,7 @@
 //
 // CREATED:         11/05/2021
 //
-// LAST EDITED:     11/16/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,6 +36,8 @@
 #include <agent-server.h>
 #include <bluez-proxy.h>
 #include <logger.h>
+#include <timeout-manager.h>
+#include <watch-manager.h>
 #include <web-server.h>
 
 static const int HTTP_PORT = 8888;
@@ -90,11 +92,9 @@ static DBusConnection* open_dbus_connection(Logger* logger, DBusError* error,
 int main() {
     // Use the standard event loop
     struct ev_loop* loop = EV_DEFAULT;
-
+    int result = 0;
     Logger logger;
     logger_initialize(&logger, default_log_handler);
-
-    // Open D-Bus connection
     DBusError error;
     dbus_error_init(&error);
 
@@ -105,20 +105,43 @@ int main() {
         return 1;
     }
 
+    // Set up Watch/Timeout managers
+    WatchManager* watch_manager = watch_manager_init(&logger, connection,
+        &error, loop);
+    if (NULL == watch_manager) {
+        result = 1;
+        goto error_watch_manager;
+    }
+
+    TimeoutManager* timeout_manager = timeout_manager_init(&logger, connection,
+        &error, loop);
+    if (NULL == timeout_manager) {
+        result = 1;
+        goto error_timeout_manager;
+    }
+
     // Set up BlueZ bus proxy
-    BluezProxy* bluez_proxy = bluez_proxy_initialize(&logger, connection,
-        &error);
+    BluezProxy* bluez_proxy = bluez_proxy_init(&logger, connection, &error);
     if (NULL == bluez_proxy) {
-        dbus_connection_unref(connection);
-        return 1;
+        result = 1;
+        goto error_bluez_proxy;
     }
 
     // Set up AgentServer
     AgentServer* agent_server = agent_server_start(&logger, connection, &error,
-        bluez_proxy, loop);
+        bluez_proxy);
+    if (NULL == agent_server) {
+        result = 1;
+        goto error_agent_server;
+    }
 
     // web server initialization
     WebServer* web_server = web_server_start(&logger, HTTP_PORT);
+    if (NULL == web_server) {
+        result = 1;
+        goto error_web_server;
+    }
+
     ev_io* web_watcher = web_server_get_watcher(web_server);
     ev_io_start(loop, web_watcher);
 
@@ -131,11 +154,18 @@ int main() {
     // Run event loop
     ev_run(loop, 0);
 
-    agent_server_stop(&agent_server);
     web_server_stop(&web_server);
+ error_web_server:
+    agent_server_stop(&agent_server);
+ error_agent_server:
     bluez_proxy_free(&bluez_proxy);
+ error_bluez_proxy:
+    timeout_manager_free(&timeout_manager);
+ error_timeout_manager:
+    watch_manager_free(&watch_manager);
+ error_watch_manager:
     dbus_connection_unref(connection);
-    return 0;
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

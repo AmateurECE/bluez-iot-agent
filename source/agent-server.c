@@ -73,7 +73,7 @@ static DBusHandlerResult agent_object_path_message_function(
 ////
 
 AgentServer* agent_server_start(Logger* logger, DBusConnection* connection,
-    DBusError* error, BluezProxy* bluez_proxy, struct ev_loop* event_loop)
+    DBusError* error, BluezProxy* bluez_proxy)
 {
     AgentServer* server = malloc(sizeof(AgentServer));
     if (NULL == server) {
@@ -83,7 +83,6 @@ AgentServer* agent_server_start(Logger* logger, DBusConnection* connection,
     server->logger = logger;
     server->connection = connection;
     server->error = error;
-    server->event_loop = event_loop;
 
     if (!dbus_connection_register_object_path(server->connection,
             AGENT_OBJECT_PATH, &agent_object_interface, server)) {

@@ -7,7 +7,7 @@
 //
 // CREATED:         11/11/2021
 //
-// LAST EDITED:     11/15/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -46,7 +46,7 @@ typedef struct BluezProxy {
     Logger* logger;
 } BluezProxy;
 
-BluezProxy* bluez_proxy_initialize(Logger* logger, DBusConnection* connection,
+BluezProxy* bluez_proxy_init(Logger* logger, DBusConnection* connection,
     DBusError* error);
 DBusError* bluez_proxy_get_error(BluezProxy* proxy);
 void bluez_proxy_free(BluezProxy** proxy);

@@ -8,7 +8,7 @@
 //
 // CREATED:         11/07/2021
 //
-// LAST EDITED:     11/16/2021
+// LAST EDITED:     11/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,24 +36,17 @@ typedef struct BluezProxy BluezProxy;
 typedef struct DBusConnection DBusConnection;
 typedef struct DBusError DBusError;
 typedef struct Logger Logger;
-/* typedef struct Vector Vector; */
-struct ev_loop;
 
 typedef struct AgentServer {
     DBusError* error;
     DBusConnection* connection;
     Logger* logger;
-    struct ev_loop* event_loop;
-    // Might need these once I begin re-implementing watchers/timeouts?
-    /* Vector* watches; */
-    /* Vector* timeouts; */
-    /* int timeout_id; */
 } AgentServer;
 
 // Start up the server: Register our Agent with the BluezProxy, request to
 // become the default agent. Register our watchers with the event loop.
 AgentServer* agent_server_start(Logger* logger, DBusConnection* connection,
-    DBusError* error, BluezProxy* bluez_proxy, struct ev_loop* event_loop);
+    DBusError* error, BluezProxy* bluez_proxy);
 
 // Stop the server
 void agent_server_stop(AgentServer** server);
