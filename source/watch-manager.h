@@ -30,12 +30,14 @@
 
 // Forward declarations
 typedef struct Logger Logger;
+typedef struct Vector Vector;
 struct ev_loop;
 typedef unsigned int dbus_bool_t;
 
 typedef struct WatchManager {
     Logger* logger;
     struct ev_loop* event_loop;
+    Vector* watch_list;
     dbus_bool_t (*AddWatch)(DBusWatch* watch, void* user_data);
     void (*RemoveWatch)(DBusWatch* watch, void* user_data);
 } WatchManager;

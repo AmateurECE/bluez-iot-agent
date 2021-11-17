@@ -31,6 +31,7 @@ project('bluez-iot-agent', 'c', version: '0.1.0')
 libmicrohttpd = dependency('libmicrohttpd')
 libdbus = dependency('dbus-1')
 libev = meson.get_compiler('c').find_library('ev')
+libseastar = dependency('libseastar')
 
 # Source Files
 agent_files = files([
@@ -57,7 +58,7 @@ configure_file(input: 'config.h.in', output: 'config.h',
 executable(
   'bluez-iot-agent',
   sources: agent_files,
-  dependencies: [libmicrohttpd, libdbus, libev],
+  dependencies: [libmicrohttpd, libdbus, libev, libseastar],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
   include_directories: ['source'],
