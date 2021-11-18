@@ -42,15 +42,10 @@
 // Private Interface
 ////
 
-struct WatchListEntry {
-    DBusWatch* watch;
-    int fd;
-};
-
 static void watch_handle_callback(struct ev_loop* loop, ev_io* watcher,
     int revents)
 {
-    struct WatchListEntry* entry = (struct WatchListEntry*)watcher->data;
+    DBusWatch* watch = (DBusWatch*)watcher->data;
     int flags = 0;
     if (revents & EV_READ) {
         flags |= DBUS_WATCH_READABLE;
@@ -58,7 +53,7 @@ static void watch_handle_callback(struct ev_loop* loop, ev_io* watcher,
     if (revents & EV_WRITE) {
         flags |= DBUS_WATCH_WRITABLE;
     }
-    dbus_watch_handle(entry->watch, flags);
+    dbus_watch_handle(watch, flags);
 }
 
 static dbus_bool_t add_watch_function(DBusWatch* watch, void* user_data)
@@ -69,16 +64,8 @@ static dbus_bool_t add_watch_function(DBusWatch* watch, void* user_data)
         return FALSE;
     }
 
-    struct WatchListEntry* entry = malloc(sizeof(struct WatchListEntry));
-    if (NULL == entry) {
-        free(watcher);
-        return FALSE;
-    }
-
     // Add the watcher to the vector.
-    watcher->data = entry;
-    entry->watch = watch;
-    entry->fd = dbus_watch_get_unix_fd(watch);
+    watcher->data = watch;
     IndexResult result = cs_vector_push_back(manager->watch_list, watcher);
     if (!result.ok) {
         if (result.error & SEASTAR_ERRNO_SET) {
@@ -90,7 +77,6 @@ static dbus_bool_t add_watch_function(DBusWatch* watch, void* user_data)
                 "Couldn't add DBusWatch to watch list: %s",
                 cs_strerror(result.error));
         }
-        free(entry);
         free(watcher);
         return FALSE;
     }
@@ -104,7 +90,8 @@ static dbus_bool_t add_watch_function(DBusWatch* watch, void* user_data)
     if (dbus_flags & DBUS_WATCH_WRITABLE) {
         ev_flags |= EV_WRITE;
     }
-    ev_io_set(watcher, entry->fd, ev_flags);
+    int watch_fd = dbus_watch_get_unix_fd(watch);
+    ev_io_set(watcher, watch_fd, ev_flags);
     ev_io_start(manager->event_loop, watcher);
     return TRUE;
 }
@@ -117,8 +104,8 @@ static void remove_watch_function(DBusWatch* watch, void* user_data)
     int watch_fd = dbus_watch_get_unix_fd(watch);
     int index = 0;
     while (NULL != (element = (ev_io*)cs_iter_next(&iter))) {
-        struct WatchListEntry* entry = (struct WatchListEntry*)element->data;
-        if (entry->fd == watch_fd) {
+        int entry_fd = dbus_watch_get_unix_fd((DBusWatch*)element->data);
+        if (entry_fd == watch_fd) {
             PointerResult ret = cs_vector_remove(manager->watch_list, index);
             if (!ret.ok) {
                 if (ret.error & SEASTAR_ERRNO_SET) {
@@ -134,7 +121,6 @@ static void remove_watch_function(DBusWatch* watch, void* user_data)
             }
 
             ev_io* watcher = ret.value;
-            free(watcher->data);
             free(watcher);
         }
         ++index;
