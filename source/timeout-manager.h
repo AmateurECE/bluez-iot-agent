@@ -30,12 +30,15 @@
 
 typedef struct DBusTimeout DBusTimeout;
 typedef struct Logger Logger;
+typedef struct Vector Vector;
 struct ev_loop;
 typedef unsigned int dbus_bool_t;
 
 typedef struct TimeoutManager {
     Logger* logger;
     struct ev_loop* event_loop;
+    Vector* timeout_list;
+    int timeout_id;
 
     dbus_bool_t (*AddTimeout)(DBusTimeout* timeout, void* data);
     void (*RemoveTimeout)(DBusTimeout* timeout, void* data);
