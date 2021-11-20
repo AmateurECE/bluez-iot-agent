@@ -29,6 +29,7 @@
 #include <stdbool.h>
 
 #include <glib.h>
+#include <glib-unix.h>
 
 #include <agent-server.h>
 #include <bluez.h>
@@ -85,6 +86,12 @@ static void name_lost(GDBusConnection* connection, const gchar* name,
     g_error("Lost name on connection, or unable to own name");
 }
 
+static int signal_handler(gpointer user_data) {
+    // All attached signal sources just cause the loop to exit gracefully
+    *((bool*)user_data) = true;
+    return 0;
+}
+
 int main(int argc, char** argv) {
     bool register_name = true;
     argp_parse(&argp, argc, argv, 0, 0, &register_name);
@@ -112,7 +119,20 @@ int main(int argc, char** argv) {
     }
 
     GMainLoop* main_loop = g_main_loop_new(NULL, FALSE);
-    g_main_loop_run(main_loop);
+    GMainContext* main_context = g_main_loop_get_context(main_loop);
+
+    // Signal handlers for graceful shutdown
+    bool exit_loop = false;
+    GSource* signal_source = g_unix_signal_source_new(SIGINT);
+    g_source_set_callback(signal_source, signal_handler, &exit_loop, NULL);
+    g_source_attach(signal_source, main_context);
+
+    // Do the main loop
+    while (!exit_loop) {
+        g_main_context_iteration(main_context, FALSE);
+    }
+
+    g_info("Exiting gracefully");
     agent_server_free(&agent_server);
 }
 
