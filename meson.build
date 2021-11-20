@@ -31,9 +31,15 @@ gnome = import('gnome')
 # GDBus Sources
 bluez_agent = gnome.gdbus_codegen(
   'bluez-agent',
-  sources: 'org.bluez.iot-agent.xml',
+  sources: 'gdbus/org.bluez.iot-agent.xml',
   interface_prefix: 'org.bluez.',
   namespace: 'IotAgent',
+)
+
+bluez = gnome.gdbus_codegen(
+  'bluez',
+  sources: 'gdbus/org.bluez.xml',
+  interface_prefix: 'org.bluez.',
 )
 
 # Dependencies
@@ -45,6 +51,7 @@ agent_files = files([
   'source/bluez-iot-agent.c',
 ])
 agent_files += bluez_agent
+agent_files += bluez
 
 # Configuration file
 config_data = configuration_data({
