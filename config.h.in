@@ -7,7 +7,7 @@
 //
 // CREATED:         11/17/2021
 //
-// LAST EDITED:     11/17/2021
+// LAST EDITED:     11/20/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,7 +25,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#define PROGRAM_NAME "@name@"
-#define PROGRAM_VERSION "@version@"
+#define CONFIG_PROGRAM_NAME "@name@"
+#define CONFIG_PROGRAM_VERSION "@version@"
+#define CONFIG_SERVICE_NAME "org.bluez.iot-agent"
+#define CONFIG_OBJECT_PATH "/org/bluez/agent"
 
 ///////////////////////////////////////////////////////////////////////////////

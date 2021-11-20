@@ -30,9 +30,12 @@
 
 #include <glib.h>
 
+#include <agent-server.h>
+#include <bluez.h>
+#include <bluez-agent.h>
 #include <config.h>
 
-const char* argp_program_name = PROGRAM_NAME " " PROGRAM_VERSION;
+const char* argp_program_name = CONFIG_PROGRAM_NAME " " CONFIG_PROGRAM_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
 
 static char doc[] = "Modern pairing wizard for Bluetooth IoT devices on Linux";
@@ -60,12 +63,57 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     return 0;
 }
 
+static void register_handlers(GDBusConnection* connection, const gchar* name,
+    const gpointer user_data)
+{
+    AgentServer* agent_server = (AgentServer*)user_data;
+    IotAgentAgent1* interface = iot_agent_agent1_skeleton_new();
+    GError* error = NULL;
+    g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(interface),
+        connection, CONFIG_OBJECT_PATH, &error);
+    g_signal_connect(interface, "handle-cancel",
+        G_CALLBACK(agent_server->Cancel), NULL);
+    g_info("Listening on name: %s", name);
+    if (NULL != error) {
+        g_error("Couldn't register object: %s", error->message);
+    }
+}
+
+static void name_lost(GDBusConnection* connection, const gchar* name,
+    gpointer user_data)
+{
+    g_error("Lost name on connection, or unable to own name");
+}
+
 int main(int argc, char** argv) {
     bool register_name = true;
     argp_parse(&argp, argc, argv, 0, 0, &register_name);
 
+    GError* error = NULL;
+    GDBusConnection* connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL,
+        &error);
+    if (NULL != error) {
+        g_error("Couldn't connect to bus: %s", error->message);
+    }
+
+    AgentServer* agent_server = agent_server_init();
+    if (NULL == agent_server) {
+        g_error("Couldn't initialize agent server: %s", strerror(errno));
+    }
+
+    if (register_name) {
+        g_bus_own_name_on_connection(connection, CONFIG_SERVICE_NAME,
+            G_BUS_NAME_OWNER_FLAGS_NONE, register_handlers, name_lost,
+            agent_server, NULL);
+    } else {
+        const gchar* service_name = g_dbus_connection_get_unique_name(
+            connection);
+        register_handlers(connection, service_name, agent_server);
+    }
+
     GMainLoop* main_loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(main_loop);
+    agent_server_free(&agent_server);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

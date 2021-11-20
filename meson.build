@@ -49,6 +49,7 @@ libgio_unix = dependency('gio-unix-2.0')
 # Source Files
 agent_files = files([
   'source/bluez-iot-agent.c',
+  'source/agent-server.c',
 ])
 agent_files += bluez_agent
 agent_files += bluez
