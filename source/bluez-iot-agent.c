@@ -27,6 +27,8 @@
 
 #include <argp.h>
 
+#include <glib.h>
+
 #include <config.h>
 
 const char* argp_program_name = PROGRAM_NAME " " PROGRAM_VERSION;
@@ -48,7 +50,9 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
 
 int main(int argc, char** argv) {
     argp_parse(&argp, argc, argv, 0, 0, NULL);
-    return 0;
+
+    GMainLoop* main_loop = g_main_loop_new(NULL, FALSE);
+    g_main_loop_run(main_loop);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -26,6 +26,15 @@
 ###
 
 project('bluez-iot-agent', 'c', version: '0.1.0')
+gnome = import('gnome')
+
+# GDBus Sources
+bluez_agent = gnome.gdbus_codegen(
+  'bluez-agent',
+  sources: 'org.bluez.iot-agent.xml',
+  interface_prefix: 'org.bluez.',
+  namespace: 'IotAgent',
+)
 
 # Dependencies
 libglib = dependency('glib-2.0')
@@ -35,6 +44,7 @@ libgio_unix = dependency('gio-unix-2.0')
 agent_files = files([
   'source/bluez-iot-agent.c',
 ])
+agent_files += bluez_agent
 
 # Configuration file
 config_data = configuration_data({
