@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/17/2021
+# LAST EDITED:      11/20/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -28,23 +28,9 @@
 project('bluez-iot-agent', 'c', version: '0.1.0')
 
 # Dependencies
-libmicrohttpd = dependency('libmicrohttpd')
-libdbus = dependency('dbus-1')
-libev = meson.get_compiler('c').find_library('ev')
-libseastar = dependency('libseastar')
 
 # Source Files
 agent_files = files([
-  'source/bluez-iot-agent.c',
-  'source/web-server.c',
-  'source/logger.c',
-  'source/bluez-proxy.c',
-  'source/agent-server.c',
-  'source/watch-manager.c',
-  'source/timeout-manager.c',
-  # 'source/state-machine.c',
-  # 'source/states.c',
-  # 'source/agent-callbacks.c',
 ])
 
 # Configuration file
@@ -58,7 +44,7 @@ configure_file(input: 'config.h.in', output: 'config.h',
 executable(
   'bluez-iot-agent',
   sources: agent_files,
-  dependencies: [libmicrohttpd, libdbus, libev, libseastar],
+  dependencies: [],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
   include_directories: ['source'],
