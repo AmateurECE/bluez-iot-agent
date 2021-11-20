@@ -45,11 +45,13 @@ bluez = gnome.gdbus_codegen(
 # Dependencies
 libglib = dependency('glib-2.0')
 libgio_unix = dependency('gio-unix-2.0')
+libsoup3 = dependency('libsoup-3.0')
 
 # Source Files
 agent_files = files([
   'source/bluez-iot-agent.c',
   'source/agent-server.c',
+  'source/web-server.c',
 ])
 agent_files += bluez_agent
 agent_files += bluez
@@ -65,7 +67,7 @@ configure_file(input: 'config.h.in', output: 'config.h',
 executable(
   'bluez-iot-agent',
   sources: agent_files,
-  dependencies: [libglib, libgio_unix],
+  dependencies: [libglib, libgio_unix, libsoup3],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
   include_directories: ['source'],

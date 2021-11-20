@@ -1,11 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            config.h
+// NAME:            web-server.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Configuration header for the application
+// DESCRIPTION:     Implementation of the web server interface
 //
-// CREATED:         11/17/2021
+// CREATED:         11/20/2021
 //
 // LAST EDITED:     11/20/2021
 //
@@ -25,10 +25,38 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#define CONFIG_PROGRAM_NAME "@name@"
-#define CONFIG_PROGRAM_VERSION "@version@"
-#define CONFIG_SERVICE_NAME "org.bluez.iot-agent"
-#define CONFIG_OBJECT_PATH "/org/bluez/agent"
-#define CONFIG_WEB_SERVER_PORT 8888
+#include <stdlib.h>
+#include <stdio.h>
+
+#include <web-server.h>
+
+///////////////////////////////////////////////////////////////////////////////
+// Private API
+////
+
+void handle_connection(SoupServer* server, SoupServerMessage* message,
+    const char* path, GHashTable* query, gpointer user_data)
+{}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+////
+
+WebServer* web_server_init() {
+    WebServer* server = malloc(sizeof(WebServer));
+    if (NULL == server) {
+        return NULL;
+    }
+
+    server->handle_connection = handle_connection;
+    return server;
+}
+
+void web_server_free(WebServer** server) {
+    if (NULL != *server) {
+        free(*server);
+        *server = NULL;
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////

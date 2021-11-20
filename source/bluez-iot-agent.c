@@ -30,11 +30,13 @@
 
 #include <glib.h>
 #include <glib-unix.h>
+#include <libsoup/soup.h>
 
 #include <agent-server.h>
 #include <bluez.h>
 #include <bluez-agent.h>
 #include <config.h>
+#include <web-server.h>
 
 const char* argp_program_name = CONFIG_PROGRAM_NAME " " CONFIG_PROGRAM_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
@@ -127,12 +129,21 @@ int main(int argc, char** argv) {
     g_source_set_callback(signal_source, signal_handler, &exit_loop, NULL);
     g_source_attach(signal_source, main_context);
 
+    // Web Server
+    WebServer* web_server = web_server_init();
+    SoupServer* soup_server = soup_server_new("tls-certificate", NULL,
+        "raw-paths", FALSE, "server-header", argp_program_name, NULL);
+    soup_server_add_handler(soup_server, "/", web_server->handle_connection,
+        web_server, NULL);
+    soup_server_listen_local(soup_server, CONFIG_WEB_SERVER_PORT, 0, &error);
+
     // Do the main loop
     while (!exit_loop) {
         g_main_context_iteration(main_context, FALSE);
     }
 
     g_info("Exiting gracefully");
+    web_server_free(&web_server);
     agent_server_free(&agent_server);
 }
 
