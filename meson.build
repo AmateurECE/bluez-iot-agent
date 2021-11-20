@@ -28,9 +28,12 @@
 project('bluez-iot-agent', 'c', version: '0.1.0')
 
 # Dependencies
+libglib = dependency('glib-2.0')
+libgio_unix = dependency('gio-unix-2.0')
 
 # Source Files
 agent_files = files([
+  'source/bluez-iot-agent.c',
 ])
 
 # Configuration file
@@ -44,7 +47,7 @@ configure_file(input: 'config.h.in', output: 'config.h',
 executable(
   'bluez-iot-agent',
   sources: agent_files,
-  dependencies: [],
+  dependencies: [libglib, libgio_unix],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
   include_directories: ['source'],
