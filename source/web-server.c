@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/20/2021
+// LAST EDITED:     11/27/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <state.h>
 #include <web-server.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -42,18 +43,22 @@ void handle_connection(SoupServer* server, SoupServerMessage* message,
 // Public API
 ////
 
-WebServer* web_server_init() {
+WebServer* web_server_init(StatePublisher* state_publisher) {
     WebServer* server = malloc(sizeof(WebServer));
     if (NULL == server) {
         return NULL;
     }
 
     server->handle_connection = handle_connection;
+
+    state_ref(state_publisher);
+    server->state_publisher = state_publisher;
     return server;
 }
 
 void web_server_free(WebServer** server) {
     if (NULL != *server) {
+        state_deref(&(*server)->state_publisher);
         free(*server);
         *server = NULL;
     }

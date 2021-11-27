@@ -108,7 +108,10 @@ int main(int argc, char** argv) {
         g_error("Couldn't connect to bus: %s", error->message);
     }
 
-    AgentServer* agent_server = agent_server_init();
+    // State machine
+    StatePublisher* state_publisher = state_init();
+
+    AgentServer* agent_server = agent_server_init(state_publisher);
     if (NULL == agent_server) {
         g_error("Couldn't initialize agent server: %s", strerror(errno));
     }
@@ -126,9 +129,6 @@ int main(int argc, char** argv) {
     GMainLoop* main_loop = g_main_loop_new(NULL, FALSE);
     GMainContext* main_context = g_main_loop_get_context(main_loop);
 
-    // State machine
-    StatePublisher* state_publisher = state_init();
-
     // Signal handlers for graceful shutdown
     GSource* signal_source = g_unix_signal_source_new(SIGINT);
     g_source_set_callback(signal_source, signal_handler, state_publisher,
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     g_source_attach(signal_source, main_context);
 
     // Web Server
-    WebServer* web_server = web_server_init();
+    WebServer* web_server = web_server_init(state_publisher);
     SoupServer* soup_server = soup_server_new("tls-certificate", NULL,
         "raw-paths", FALSE, "server-header", argp_program_name, NULL);
     soup_server_add_handler(soup_server, "/", web_server->handle_connection,
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
     g_info("Exiting gracefully");
     web_server_free(&web_server);
     agent_server_free(&agent_server);
-    state_free(&state_publisher);
+    state_deref(&state_publisher);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

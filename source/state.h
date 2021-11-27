@@ -36,6 +36,8 @@ enum State {
 typedef struct StatePublisher StatePublisher;
 
 StatePublisher* state_init();
+void state_ref(StatePublisher* publisher);
+void state_deref(StatePublisher** publisher);
 int state_add_observer(StatePublisher* publisher,
     void (*onExit)(enum State, void* user_data),
     void (*onEntry)(enum State, void* user_data), void* user_data);
@@ -43,7 +45,6 @@ void state_set(StatePublisher* publisher, enum State);
 enum State state_get(StatePublisher* publisher);
 void state_do_exit(StatePublisher* publisher);
 void state_do_entry(StatePublisher* publisher);
-void state_free(StatePublisher** publisher);
 
 #endif // STATE_H
 

@@ -41,6 +41,7 @@ static const int PENDING_EXIT  = 1 << 1;
 
 static const size_t MAXIMUM_OBSERVERS = 8;
 typedef struct StatePublisher {
+    int ref_count;
     enum State current_state;
     int pending_change;
     size_t num_observers;
@@ -66,6 +67,26 @@ StatePublisher* state_init() {
 
     memset(publisher->observers, 0, sizeof(StateObserver));
     return publisher;
+}
+
+void state_ref(StatePublisher* publisher) {
+    ++publisher->ref_count;
+}
+
+void state_deref(StatePublisher** publisher) {
+    if (NULL == *publisher) {
+        return;
+    }
+
+    if ((*publisher)->ref_count > 0) {
+        --(*publisher)->ref_count;
+        *publisher = NULL;
+        return;
+    }
+
+    free((*publisher)->observers);
+    free(*publisher);
+    *publisher = NULL;
 }
 
 int state_add_observer(StatePublisher* publisher,
@@ -114,16 +135,6 @@ void state_do_entry(StatePublisher* publisher) {
         publisher->observers[i].onEntry(publisher->current_state,
             publisher->observers[i].user_data);
     }
-}
-
-void state_free(StatePublisher** publisher) {
-    if (NULL == *publisher) {
-        return;
-    }
-
-    free((*publisher)->observers);
-    free(*publisher);
-    *publisher = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

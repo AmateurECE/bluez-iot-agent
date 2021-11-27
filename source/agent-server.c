@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/20/2021
+// LAST EDITED:     11/27/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -30,6 +30,7 @@
 
 #include <agent-server.h>
 #include <bluez-agent.h>
+#include <state.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private API
@@ -69,13 +70,13 @@ static void authorize_service(IotAgentAgent1* interface,
 
 static void cancel(IotAgentAgent1* interface,
     GDBusMethodInvocation* invocation)
-{}
+{ fprintf(stderr, "Cancel called!\n"); }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public API
 ////
 
-AgentServer* agent_server_init() {
+AgentServer* agent_server_init(StatePublisher* state_publisher) {
     AgentServer* server = malloc(sizeof(AgentServer));
     if (NULL == server) {
         return NULL;
@@ -89,11 +90,15 @@ AgentServer* agent_server_init() {
     server->RequestAuthorization = request_authorization;
     server->AuthorizeService = authorize_service;
     server->Cancel = cancel;
+
+    state_ref(state_publisher);
+    server->state_publisher = state_publisher;
     return server;
 }
 
 void agent_server_free(AgentServer** server) {
     if (NULL != *server) {
+        state_deref(&(*server)->state_publisher);
         free(*server);
         *server = NULL;
     }

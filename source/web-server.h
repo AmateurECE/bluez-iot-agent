@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/20/2021
+// LAST EDITED:     11/27/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,6 +28,7 @@
 #ifndef WEB_SERVER_H
 #define WEB_SERVER_H
 
+typedef struct StatePublisher StatePublisher;
 typedef struct _SoupServer SoupServer;
 typedef struct _SoupServerMessage SoupServerMessage;
 typedef struct _GHashTable GHashTable;
@@ -36,9 +37,10 @@ typedef void* gpointer;
 typedef struct WebServer {
     void (*handle_connection)(SoupServer* server, SoupServerMessage* message,
         const char* path, GHashTable* query, gpointer user_data);
+    StatePublisher* state_publisher;
 } WebServer;
 
-WebServer* web_server_init();
+WebServer* web_server_init(StatePublisher* publisher);
 void web_server_free(WebServer**);
 
 #endif // WEB_SERVER_H

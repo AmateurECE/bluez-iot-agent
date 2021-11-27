@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/20/2021
+// LAST EDITED:     11/27/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -32,6 +32,7 @@
 
 typedef char object_path;
 typedef char gchar;
+typedef struct StatePublisher StatePublisher;
 typedef struct _IotAgentAgent1 IotAgentAgent1;
 typedef struct _GDBusMethodInvocation GDBusMethodInvocation;
 
@@ -57,9 +58,11 @@ typedef struct AgentServer {
         const gchar* uuid);
     void (*Cancel)(IotAgentAgent1* interface,
         GDBusMethodInvocation* invocation);
+
+    StatePublisher* state_publisher;
 } AgentServer;
 
-AgentServer* agent_server_init();
+AgentServer* agent_server_init(StatePublisher* publisher);
 void agent_server_free(AgentServer**);
 
 #endif // AGENT_SERVER_H
