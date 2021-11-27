@@ -146,7 +146,9 @@ int main(int argc, char** argv) {
 
     // Do the main loop
     while (STATE_SHUTDOWN != state_get(state_publisher)) {
+        state_do_entry(state_publisher);
         g_main_context_iteration(main_context, FALSE);
+        state_do_exit(state_publisher);
     }
 
     g_info("Exiting gracefully");

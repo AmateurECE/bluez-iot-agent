@@ -36,9 +36,13 @@ typedef struct StateObserver {
     void (*onEntry)(enum State, void* user_data);
 } StateObserver;
 
+static const int PENDING_ENTRY = 1 << 0;
+static const int PENDING_EXIT  = 1 << 1;
+
 static const size_t MAXIMUM_OBSERVERS = 8;
 typedef struct StatePublisher {
     enum State current_state;
+    int pending_change;
     size_t num_observers;
     StateObserver* observers;
 } StatePublisher;
@@ -81,6 +85,7 @@ int state_add_observer(StatePublisher* publisher,
 
 void state_set(StatePublisher* publisher, enum State state) {
     publisher->current_state = state;
+    publisher->pending_change = PENDING_ENTRY | PENDING_EXIT;
 }
 
 enum State state_get(StatePublisher* publisher) {
@@ -88,6 +93,11 @@ enum State state_get(StatePublisher* publisher) {
 }
 
 void state_do_exit(StatePublisher* publisher) {
+    if (!(publisher->pending_change & PENDING_EXIT)) {
+        return;
+    }
+
+    publisher->pending_change ^= PENDING_EXIT;
     for (size_t i = 0; i < publisher->num_observers; ++i) {
         publisher->observers[i].onExit(publisher->current_state,
             publisher->observers[i].user_data);
@@ -95,6 +105,11 @@ void state_do_exit(StatePublisher* publisher) {
 }
 
 void state_do_entry(StatePublisher* publisher) {
+    if (!(publisher->pending_change & PENDING_ENTRY)) {
+        return;
+    }
+
+    publisher->pending_change ^= PENDING_ENTRY;
     for (size_t i = 0; i < publisher->num_observers; ++i) {
         publisher->observers[i].onEntry(publisher->current_state,
             publisher->observers[i].user_data);
