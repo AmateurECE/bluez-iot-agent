@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/20/2021
+// LAST EDITED:     11/27/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,6 +36,7 @@
 #include <bluez.h>
 #include <bluez-agent.h>
 #include <config.h>
+#include <state.h>
 #include <web-server.h>
 
 const char* argp_program_name = CONFIG_PROGRAM_NAME " " CONFIG_PROGRAM_VERSION;
@@ -76,7 +77,8 @@ static void register_handlers(GDBusConnection* connection, const gchar* name,
         connection, CONFIG_OBJECT_PATH, &error);
     g_signal_connect(interface, "handle-cancel",
         G_CALLBACK(agent_server->Cancel), NULL);
-    g_info("Listening on name: %s", name);
+    g_info("Agent listening on D-Bus at dest=%s,path=%s", name,
+        CONFIG_OBJECT_PATH);
     if (NULL != error) {
         g_error("Couldn't register object: %s", error->message);
     }
@@ -90,7 +92,8 @@ static void name_lost(GDBusConnection* connection, const gchar* name,
 
 static int signal_handler(gpointer user_data) {
     // All attached signal sources just cause the loop to exit gracefully
-    *((bool*)user_data) = true;
+    StatePublisher* publisher = (StatePublisher*)user_data;
+    state_set(publisher, STATE_SHUTDOWN);
     return 0;
 }
 
@@ -123,10 +126,13 @@ int main(int argc, char** argv) {
     GMainLoop* main_loop = g_main_loop_new(NULL, FALSE);
     GMainContext* main_context = g_main_loop_get_context(main_loop);
 
+    // State machine
+    StatePublisher* state_publisher = state_init();
+
     // Signal handlers for graceful shutdown
-    bool exit_loop = false;
     GSource* signal_source = g_unix_signal_source_new(SIGINT);
-    g_source_set_callback(signal_source, signal_handler, &exit_loop, NULL);
+    g_source_set_callback(signal_source, signal_handler, state_publisher,
+        NULL);
     g_source_attach(signal_source, main_context);
 
     // Web Server
@@ -135,16 +141,18 @@ int main(int argc, char** argv) {
         "raw-paths", FALSE, "server-header", argp_program_name, NULL);
     soup_server_add_handler(soup_server, "/", web_server->handle_connection,
         web_server, NULL);
-    soup_server_listen_local(soup_server, CONFIG_WEB_SERVER_PORT, 0, &error);
+    soup_server_listen_all(soup_server, CONFIG_WEB_SERVER_PORT, 0, &error);
+    g_info("Web server listening at 0.0.0.0:%d", CONFIG_WEB_SERVER_PORT);
 
     // Do the main loop
-    while (!exit_loop) {
+    while (STATE_SHUTDOWN != state_get(state_publisher)) {
         g_main_context_iteration(main_context, FALSE);
     }
 
     g_info("Exiting gracefully");
     web_server_free(&web_server);
     agent_server_free(&agent_server);
+    state_free(&state_publisher);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
