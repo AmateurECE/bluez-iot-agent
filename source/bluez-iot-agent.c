@@ -136,7 +136,11 @@ int main(int argc, char** argv) {
     g_source_attach(signal_source, main_context);
 
     // Web Server
-    WebServer* web_server = web_server_init(state_publisher);
+    const char* webroot_path = getenv("AGENT_WEBROOT");
+    if (NULL == webroot_path) {
+        webroot_path = CONFIG_WEBROOT_PATH;
+    }
+    WebServer* web_server = web_server_init(webroot_path, state_publisher);
     SoupServer* soup_server = soup_server_new("tls-certificate", NULL,
         "raw-paths", FALSE, "server-header", argp_program_name, NULL);
     soup_server_add_handler(soup_server, "/", web_server->handle_connection,

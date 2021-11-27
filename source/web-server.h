@@ -38,9 +38,14 @@ typedef struct WebServer {
     void (*handle_connection)(SoupServer* server, SoupServerMessage* message,
         const char* path, GHashTable* query, gpointer user_data);
     StatePublisher* state_publisher;
+    char* stylesheet;
+    size_t stylesheet_length;
+    char* html;
+    size_t html_length;
 } WebServer;
 
-WebServer* web_server_init(StatePublisher* publisher);
+WebServer* web_server_init(const char* webroot_path,
+    StatePublisher* publisher);
 void web_server_free(WebServer**);
 
 #endif // WEB_SERVER_H
