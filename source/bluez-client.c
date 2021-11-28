@@ -32,8 +32,11 @@
 #include <state.h>
 
 typedef struct BluezClient {
-    int unused;
+    AgentManager1* manager;
 } BluezClient;
+
+static const char* BLUEZ_SERVICE = "org.bluez";
+static const char* BLUEZ_OBJECT_PATH = "/org/bluez";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private API
@@ -66,8 +69,7 @@ static void priv_on_entry(enum State state, void* user_data) {
     case STATE_SHUTDOWN:
         do_enter_shutdown(client);
         break;
-    default:
-        g_error("Unknown state: %d\n", state);
+    default: break;
     }
 }
 
@@ -78,10 +80,22 @@ static void priv_on_exit(enum State state, void* user_data)
 // Public API
 ////
 
-BluezClient* bluez_client_init(StatePublisher* state_publisher) {
+BluezClient* bluez_client_init(StatePublisher* state_publisher,
+    GDBusConnection* connection)
+{
     BluezClient* client = malloc(sizeof(BluezClient));
     if (NULL == client) {
         return NULL;
+    }
+
+    // Set up Agent
+    GError* error = NULL;
+    client->manager = agent_manager1_proxy_new_sync(connection,
+        G_DBUS_PROXY_FLAGS_NONE, BLUEZ_SERVICE, BLUEZ_OBJECT_PATH, NULL,
+        &error);
+    if (NULL != error) {
+        g_error("Failed to set up bluetoothd D-Bus proxy: %s", error->message);
+        g_error_free(error);
     }
 
     if (0 != state_add_observer(state_publisher, priv_on_exit, priv_on_entry,
@@ -90,6 +104,28 @@ BluezClient* bluez_client_init(StatePublisher* state_publisher) {
         return NULL;
     }
     return client;
+}
+
+void bluez_client_setup_agent(BluezClient* bluez_client,
+    const char* object_path, const char* capability)
+{
+    GError* error = NULL;
+
+    // Register agent with BlueZ service
+    agent_manager1_call_register_agent_sync(bluez_client->manager, object_path,
+        capability, NULL, &error);
+    if (NULL != error) {
+        g_error("Failed to regster agent with bluetoothd: %s", error->message);
+        g_error_free(error);
+    }
+
+    // Request to become the default agent
+    agent_manager1_call_request_default_agent_sync(bluez_client->manager,
+        object_path, NULL, &error);
+    if (NULL != error) {
+        g_error("Failed to become the default agent: %s", error->message);
+        g_error_free(error);
+    }
 }
 
 void bluez_client_free(BluezClient** client) {

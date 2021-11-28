@@ -150,7 +150,9 @@ int main(int argc, char** argv) {
     g_info("Web server listening at 0.0.0.0:%d", CONFIG_WEB_SERVER_PORT);
 
     // bluetoothd D-Bus client
-    BluezClient* bluez_client = bluez_client_init(state_publisher);
+    BluezClient* bluez_client = bluez_client_init(state_publisher, connection);
+    bluez_client_setup_agent(bluez_client, CONFIG_OBJECT_PATH,
+        CONFIG_AGENT_CAPABILITY);
 
     // Bring up in STATE_CONNECTION_WAIT, then do the main loop
     state_set(state_publisher, STATE_CONNECTION_WAIT);

@@ -72,7 +72,8 @@ executable(
   sources: agent_files,
   dependencies: [libglib, libgio_unix, libsoup3, libhandlebars],
   install: true,
-  c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter'],
+  c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter',
+           '-Wno-unused-variable'],
   include_directories: ['source'],
 )
 

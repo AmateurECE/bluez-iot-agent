@@ -31,5 +31,6 @@
 #define CONFIG_OBJECT_PATH "/org/bluez/agent"
 #define CONFIG_WEB_SERVER_PORT 8888
 #define CONFIG_WEBROOT_PATH "/usr/share/bluez-iot-agent"
+#define CONFIG_AGENT_CAPABILITY "NoInputNoOutput"
 
 ///////////////////////////////////////////////////////////////////////////////

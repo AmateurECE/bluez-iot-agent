@@ -29,8 +29,13 @@
 #define BLUEZ_CLIENT_H
 
 typedef struct BluezClient BluezClient;
+typedef struct StatePublisher StatePublisher;
+typedef struct _GDBusConnection GDBusConnection;
 
-BluezClient* bluez_client_init();
+BluezClient* bluez_client_init(StatePublisher* state_publisher,
+    GDBusConnection* connection);
+void bluez_client_setup_agent(BluezClient* bluez_client,
+    const char* object_path, const char* capability);
 void bluez_client_free(BluezClient** client);
 
 #endif // BLUEZ_CLIENT_H
