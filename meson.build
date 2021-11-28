@@ -54,6 +54,7 @@ agent_files = files([
   'source/agent-server.c',
   'source/web-server.c',
   'source/state.c',
+  'source/bluez-client.c',
 ])
 agent_files += bluez_agent
 agent_files += bluez

@@ -70,7 +70,7 @@ static void authorize_service(IotAgentAgent1* interface,
 
 static void cancel(IotAgentAgent1* interface,
     GDBusMethodInvocation* invocation)
-{ fprintf(stderr, "Cancel called!\n"); }
+{}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public API
