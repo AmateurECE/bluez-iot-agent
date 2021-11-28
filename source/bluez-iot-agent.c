@@ -35,6 +35,7 @@
 #include <agent-server.h>
 #include <bluez.h>
 #include <bluez-agent.h>
+#include <bluez-client.h>
 #include <config.h>
 #include <state.h>
 #include <web-server.h>
@@ -148,6 +149,9 @@ int main(int argc, char** argv) {
     soup_server_listen_all(soup_server, CONFIG_WEB_SERVER_PORT, 0, &error);
     g_info("Web server listening at 0.0.0.0:%d", CONFIG_WEB_SERVER_PORT);
 
+    // bluetoothd D-Bus client
+    BluezClient* bluez_client = bluez_client_init(state_publisher);
+
     // Bring up in STATE_CONNECTION_WAIT, then do the main loop
     state_set(state_publisher, STATE_CONNECTION_WAIT);
     while (STATE_SHUTDOWN != state_get(state_publisher)) {
@@ -157,6 +161,8 @@ int main(int argc, char** argv) {
     }
 
     g_info("Exiting gracefully");
+    state_do_entry(state_publisher); // <- need to "enter" STATE_SHUTDOWN
+    bluez_client_free(&bluez_client);
     web_server_free(&web_server);
     agent_server_free(&agent_server);
     state_deref(&state_publisher);

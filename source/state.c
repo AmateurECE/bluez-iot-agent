@@ -97,10 +97,10 @@ int state_add_observer(StatePublisher* publisher,
         return 1;
     }
 
-    const size_t index = ++publisher->num_observers;
-    publisher->observers[index].user_data = user_data;
-    publisher->observers[index].onExit = onExit;
-    publisher->observers[index].onEntry = onEntry;
+    publisher->observers[publisher->num_observers].user_data = user_data;
+    publisher->observers[publisher->num_observers].onExit = onExit;
+    publisher->observers[publisher->num_observers].onEntry = onEntry;
+    ++publisher->num_observers;
     return 0;
 }
 
