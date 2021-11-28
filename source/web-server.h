@@ -28,6 +28,7 @@
 #ifndef WEB_SERVER_H
 #define WEB_SERVER_H
 
+typedef struct Handlebars Handlebars;
 typedef struct StatePublisher StatePublisher;
 typedef struct _SoupServer SoupServer;
 typedef struct _SoupServerMessage SoupServerMessage;
@@ -40,8 +41,7 @@ typedef struct WebServer {
     StatePublisher* state_publisher;
     char* stylesheet;
     size_t stylesheet_length;
-    char* html;
-    size_t html_length;
+    Handlebars* handlebars;
 } WebServer;
 
 WebServer* web_server_init(const char* webroot_path,

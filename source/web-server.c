@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 
 #include <libsoup/soup.h>
+#include <handlebars.h>
 
 #include <state.h>
 #include <web-server.h>
@@ -50,11 +51,24 @@ static void handle_connection(SoupServer* server, SoupServerMessage* message,
             NULL);
         return;
     }
+    if (strcmp("/", path)) {
+        soup_server_message_set_status(message, SOUP_STATUS_NOT_FOUND, NULL);
+        g_info("WebServer: GET %s => 404 Not Found", path);
+        return;
+    }
 
+    g_info("WebServer: GET %s => 200 Ok", path);
     WebServer* web_server = (WebServer*)user_data;
+    HbTemplateContext* context = handlebars_template_context_init();
+    handlebars_template_context_set_string(context, "header", "Hey!");
+    HbString* response = handlebars_template_render(web_server->handlebars,
+        context);
+    handlebars_template_context_free(&context);
+
     soup_server_message_set_status(message, SOUP_STATUS_OK, NULL);
     soup_server_message_set_response(message, "text/html", SOUP_MEMORY_COPY,
-        web_server->html, web_server->html_length);
+        response->string, response->length);
+    hb_string_free(&response);
 }
 
 static char* priv_read_file(WebServer* server, const char* webroot,
@@ -93,8 +107,11 @@ static char* priv_read_file(WebServer* server, const char* webroot,
     }
 
     ssize_t bytes_read = 1;
+    size_t total_bytes_read = 0;
     while (bytes_read > 0) {
-        bytes_read = read(file_fd, file_contents, *file_length);
+        bytes_read = read(file_fd, file_contents + total_bytes_read,
+            *file_length - total_bytes_read);
+        total_bytes_read += bytes_read;
     }
     if (0 > bytes_read) {
         close(file_fd);
@@ -102,6 +119,7 @@ static char* priv_read_file(WebServer* server, const char* webroot,
     }
 
     close(file_fd);
+    file_contents[*file_length - 1] = '\0';
     return file_contents;
 }
 
@@ -124,12 +142,16 @@ WebServer* web_server_init(const char* webroot_path,
         return NULL;
     }
 
-    server->html = priv_read_file(server, webroot_path, TEMPLATE_NAME,
-        &server->html_length);
-    if (NULL == server->html) {
+    size_t html_length = 0;
+    char* html = priv_read_file(server, webroot_path, TEMPLATE_NAME,
+        &html_length);
+    HbInputContext* input_context = handlebars_input_context_from_string(html);
+    server->handlebars = handlebars_template_load(input_context);
+    handlebars_input_context_free(&input_context);
+    if (NULL == server->handlebars) {
         free(server->stylesheet);
         free(server);
-        return NULL;
+        g_error("Failed to load template!");
     }
 
     server->handle_connection = handle_connection;
@@ -141,7 +163,7 @@ WebServer* web_server_init(const char* webroot_path,
 void web_server_free(WebServer** server) {
     if (NULL != *server) {
         state_deref(&(*server)->state_publisher);
-        free((*server)->html);
+        handlebars_template_free(&(*server)->handlebars);
         free((*server)->stylesheet);
         free(*server);
         *server = NULL;
