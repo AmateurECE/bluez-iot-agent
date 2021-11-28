@@ -43,24 +43,35 @@ static const char* TEMPLATE_NAME = "index.html.hbs";
 // Private API
 ////
 
-static void handle_connection(SoupServer* server, SoupServerMessage* message,
+static void post_request(SoupServer* server, SoupServerMessage* message,
     const char* path, GHashTable* query, gpointer user_data)
 {
-    if (SOUP_METHOD_GET != soup_server_message_get_method(message)) {
-        soup_server_message_set_status(message, SOUP_STATUS_NOT_IMPLEMENTED,
-            NULL);
-        return;
-    }
-    if (strcmp("/", path)) {
-        soup_server_message_set_status(message, SOUP_STATUS_NOT_FOUND, NULL);
-        g_info("WebServer: GET %s => 404 Not Found", path);
-        return;
-    }
+    WebServer* web_server = (WebServer*)user_data;
+    const char* response = "Ok";
+    soup_server_message_set_status(message, SOUP_STATUS_OK, NULL);
+    soup_server_message_set_response(message, "text/html", SOUP_MEMORY_COPY,
+        response, strlen(response));
+    g_info("WebServer: GOING TO STATE_PAIRABLE");
+    state_set(web_server->state_publisher, STATE_PAIRABLE);
+}
 
-    g_info("WebServer: GET %s => 200 Ok", path);
+static void get_request(SoupServer* server, SoupServerMessage* message,
+    const char* path, GHashTable* query, gpointer user_data)
+{
     WebServer* web_server = (WebServer*)user_data;
     HbTemplateContext* context = handlebars_template_context_init();
-    handlebars_template_context_set_string(context, "header", "Hey!");
+
+    switch (state_get(web_server->state_publisher)) {
+    case STATE_CONNECTION_WAIT:
+    case STATE_CONNECTED:
+        handlebars_template_context_set_string(context, "action",
+            "Pairing Mode");
+        break;
+    default: break;
+    }
+
+    handlebars_template_context_set_string(context, "styles",
+        web_server->stylesheet);
     HbString* response = handlebars_template_render(web_server->handlebars,
         context);
     handlebars_template_context_free(&context);
@@ -69,6 +80,24 @@ static void handle_connection(SoupServer* server, SoupServerMessage* message,
     soup_server_message_set_response(message, "text/html", SOUP_MEMORY_COPY,
         response->string, response->length);
     hb_string_free(&response);
+}
+
+static void handle_connection(SoupServer* server, SoupServerMessage* message,
+    const char* path, GHashTable* query, gpointer user_data)
+{
+    if (strcmp("/", path)) {
+        soup_server_message_set_status(message, SOUP_STATUS_NOT_FOUND, NULL);
+        g_info("WebServer: GET %s => 404 Not Found", path);
+        return;
+    }
+
+    if (SOUP_METHOD_GET == soup_server_message_get_method(message)) {
+        g_info("WebServer: GET %s => 200 Ok", path);
+        get_request(server, message, path, query, user_data);
+    } else {
+        g_info("WebServer: POST %s => 200 Ok", path);
+        post_request(server, message, path, query, user_data);
+    }
 }
 
 static char* priv_read_file(WebServer* server, const char* webroot,

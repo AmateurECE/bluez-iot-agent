@@ -148,7 +148,8 @@ int main(int argc, char** argv) {
     soup_server_listen_all(soup_server, CONFIG_WEB_SERVER_PORT, 0, &error);
     g_info("Web server listening at 0.0.0.0:%d", CONFIG_WEB_SERVER_PORT);
 
-    // Do the main loop
+    // Bring up in STATE_CONNECTION_WAIT, then do the main loop
+    state_set(state_publisher, STATE_CONNECTION_WAIT);
     while (STATE_SHUTDOWN != state_get(state_publisher)) {
         state_do_entry(state_publisher);
         g_main_context_iteration(main_context, FALSE);
