@@ -1,4 +1,8 @@
 <node>
+  <interface name="org.bluez.Adapter1">
+    <property name="Discoverable" type="b" access="readwrite" />
+  </interface>
+
   <interface name="org.bluez.AgentManager1">
     <method name="RegisterAgent">
       <arg name="agent" direction="in" type="o" />

@@ -7,7 +7,7 @@
 //
 // CREATED:         11/27/2021
 //
-// LAST EDITED:     11/27/2021
+// LAST EDITED:     11/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -33,7 +33,7 @@ typedef struct StatePublisher StatePublisher;
 typedef struct _GDBusConnection GDBusConnection;
 
 BluezClient* bluez_client_init(StatePublisher* state_publisher,
-    GDBusConnection* connection);
+    GDBusConnection* connection, const char* device);
 void bluez_client_setup_agent(BluezClient* bluez_client,
     const char* object_path, const char* capability);
 void bluez_client_free(BluezClient** client);

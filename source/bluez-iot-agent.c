@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/27/2021
+// LAST EDITED:     11/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -49,15 +49,25 @@ static error_t parse_opt(int, char*, struct argp_state*);
 static const struct argp_option options[] = {
     { "no-register-name", 'n', NULL, OPTION_ARG_OPTIONAL,
       "Don't attempt to register the service name with D-Bus", 0 },
+    { "device", 'd', "DEVICE", OPTION_ARG_OPTIONAL,
+      "The Bluetooth device to listen on (hci0 by default, hciN)", 0 },
     { 0 },
 };
 static struct argp argp = { options, parse_opt, NULL, doc, NULL, NULL, NULL };
 
+struct arguments {
+    bool register_name;
+    const char* device;
+};
+
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
-    bool* register_name = state->input;
+    struct arguments* arguments = state->input;
     switch (key) {
     case 'n':
-        *register_name = false;
+        arguments->register_name = false;
+        break;
+    case 'd':
+        arguments->device = arg;
         break;
     case ARGP_KEY_END:
         break;
@@ -99,8 +109,8 @@ static int signal_handler(gpointer user_data) {
 }
 
 int main(int argc, char** argv) {
-    bool register_name = true;
-    argp_parse(&argp, argc, argv, 0, 0, &register_name);
+    struct arguments arguments = { .register_name = true, .device="hci0" };
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
     GError* error = NULL;
     GDBusConnection* connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL,
@@ -117,7 +127,7 @@ int main(int argc, char** argv) {
         g_error("Couldn't initialize agent server: %s", strerror(errno));
     }
 
-    if (register_name) {
+    if (arguments.register_name) {
         g_bus_own_name_on_connection(connection, CONFIG_SERVICE_NAME,
             G_BUS_NAME_OWNER_FLAGS_NONE, register_handlers, name_lost,
             agent_server, NULL);
@@ -150,7 +160,8 @@ int main(int argc, char** argv) {
     g_info("Web server listening at 0.0.0.0:%d", CONFIG_WEB_SERVER_PORT);
 
     // bluetoothd D-Bus client
-    BluezClient* bluez_client = bluez_client_init(state_publisher, connection);
+    BluezClient* bluez_client = bluez_client_init(state_publisher, connection,
+        arguments.device);
     bluez_client_setup_agent(bluez_client, CONFIG_OBJECT_PATH,
         CONFIG_AGENT_CAPABILITY);
 
