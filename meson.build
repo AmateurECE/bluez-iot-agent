@@ -60,9 +60,11 @@ agent_files += bluez_agent
 agent_files += bluez
 
 # Configuration file
+webroot_path = get_option('datadir') / 'bluez-iot-agent'
 config_data = configuration_data({
   'version': meson.project_version(),
   'name': meson.project_name(),
+  'webroot_path': get_option('prefix') / webroot_path,
 })
 configure_file(input: 'config.h.in', output: 'config.h',
                configuration: config_data)
@@ -81,6 +83,12 @@ executable(
 install_data(
   'dbus-1/bluez-iot-agent.conf',
   install_dir: 'share/dbus-1/system.d'
+)
+
+# Install UI files to webroot
+install_data(
+  ['templates/index.html.hbs', 'templates/style.css'],
+  install_dir: webroot_path,
 )
 
 ###############################################################################
