@@ -7,7 +7,7 @@
 //
 // CREATED:         11/27/2021
 //
-// LAST EDITED:     11/28/2021
+// LAST EDITED:     11/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -117,9 +117,9 @@ BluezClient* bluez_client_init(StatePublisher* state_publisher,
         goto error;
     }
 
-    strncpy(object_path, CONFIG_ADAPTER_PATH_PREFIX, prefix_length);
+    strcpy(object_path, CONFIG_ADAPTER_PATH_PREFIX);
     object_path[prefix_length] = '/';
-    strncpy(object_path + prefix_length + 1, device, device_length);
+    strcpy(object_path + prefix_length + 1, device);
     object_path[prefix_length + 1 + device_length] = '\0';
     client->adapter = adapter1_proxy_new_sync(connection,
         G_DBUS_PROXY_FLAGS_NONE, BLUEZ_SERVICE, object_path, NULL,

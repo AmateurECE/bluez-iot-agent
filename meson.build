@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/27/2021
+# LAST EDITED:      11/29/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -73,7 +73,7 @@ executable(
   dependencies: [libglib, libgio_unix, libsoup3, libhandlebars],
   install: true,
   c_args: ['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter',
-           '-Wno-unused-variable'],
+           '-Wno-unused-variable', '-Os'],
   include_directories: ['source'],
 )
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/27/2021
+// LAST EDITED:     11/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -104,8 +104,7 @@ static char* priv_read_file(WebServer* server, const char* webroot,
     const char* filename, size_t* file_length)
 {
     const size_t webroot_length = strlen(webroot) + 1;
-    const size_t filename_length = strlen(filename) + 1;
-    const size_t file_path_length = webroot_length + filename_length;
+    const size_t file_path_length = webroot_length + strlen(filename) + 1;
     char* file_path = malloc(file_path_length);
     if (NULL == file_path) {
         g_error("Couldn't allocate memory for path: %s", strerror(errno));
@@ -113,7 +112,7 @@ static char* priv_read_file(WebServer* server, const char* webroot,
 
     strncpy(file_path, webroot, webroot_length);
     file_path[webroot_length - 1] = '/';
-    strncpy(file_path + webroot_length, filename, filename_length);
+    strcpy(file_path + webroot_length, filename);
 
     int file_fd = open(file_path, O_RDONLY);
     if (0 > file_fd) {
