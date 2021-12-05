@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/27/2021
+// LAST EDITED:     12/04/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -66,11 +66,17 @@ static void request_authorization(IotAgentAgent1* interface,
 static void authorize_service(IotAgentAgent1* interface,
     GDBusMethodInvocation* invocation, const object_path* path,
     const gchar* uuid)
-{}
+{
+    g_info("%s called", __FUNCTION__);
+    iot_agent_agent1_complete_authorize_service(interface, invocation);
+}
 
 static void cancel(IotAgentAgent1* interface,
     GDBusMethodInvocation* invocation)
-{}
+{
+    g_info("%s called", __FUNCTION__);
+    iot_agent_agent1_complete_cancel(interface, invocation);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public API

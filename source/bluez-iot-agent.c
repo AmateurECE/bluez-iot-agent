@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/28/2021
+// LAST EDITED:     12/04/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -88,6 +88,8 @@ static void register_handlers(GDBusConnection* connection, const gchar* name,
         connection, CONFIG_OBJECT_PATH, &error);
     g_signal_connect(interface, "handle-cancel",
         G_CALLBACK(agent_server->Cancel), NULL);
+    g_signal_connect(interface, "handle-authorize-service",
+        G_CALLBACK(agent_server->AuthorizeService), NULL);
     g_info("Agent listening on D-Bus at dest=%s,path=%s", name,
         CONFIG_OBJECT_PATH);
     if (NULL != error) {
