@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/29/2021
+// LAST EDITED:     01/16/2022
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -43,6 +43,30 @@ static const char* TEMPLATE_NAME = "index.html.hbs";
 // Private API
 ////
 
+static const char* get_action_string(enum State state) {
+    switch (state) {
+    case STATE_CONNECTION_WAIT:
+    case STATE_CONNECTED:
+        return "Pairing Mode";
+    default: return "";
+    }
+}
+
+static HbsResult context_handler(void* key_handler_data, const char* key,
+    const char** value)
+{
+    WebServer* web_server = (WebServer*)key_handler_data;
+    if (!strcmp(key, "action")) {
+        *value = get_action_string(state_get(web_server->state_publisher));
+        return HBS_OK;
+    } else if (!strcmp(key, "styles")) {
+        *value = web_server->stylesheet;
+        return HBS_OK;
+    } else {
+        return HBS_ERROR;
+    }
+}
+
 static void post_request(SoupServer* server, SoupServerMessage* message,
     const char* path, GHashTable* query, gpointer user_data)
 {
@@ -59,27 +83,18 @@ static void get_request(SoupServer* server, SoupServerMessage* message,
     const char* path, GHashTable* query, gpointer user_data)
 {
     WebServer* web_server = (WebServer*)user_data;
-    HbTemplateContext* context = handlebars_template_context_init();
-
-    switch (state_get(web_server->state_publisher)) {
-    case STATE_CONNECTION_WAIT:
-    case STATE_CONNECTED:
-        handlebars_template_context_set_string(context, "action",
-            "Pairing Mode");
-        break;
-    default: break;
-    }
-
-    handlebars_template_context_set_string(context, "styles",
-        web_server->stylesheet);
-    HbString* response = handlebars_template_render(web_server->handlebars,
-        context);
-    handlebars_template_context_free(&context);
+    HbsHandlers handlers = {
+        .key_handler = context_handler,
+        .key_handler_data = web_server,
+    };
+    HbsString* response = hbs_template_render(web_server->handlebars,
+        &handlers);
 
     soup_server_message_set_status(message, SOUP_STATUS_OK, NULL);
     soup_server_message_set_response(message, "text/html", SOUP_MEMORY_COPY,
         response->string, response->length);
-    hb_string_free(&response);
+
+    hbs_string_free(response);
 }
 
 static void handle_connection(SoupServer* server, SoupServerMessage* message,
@@ -173,9 +188,9 @@ WebServer* web_server_init(const char* webroot_path,
     size_t html_length = 0;
     char* html = priv_read_file(server, webroot_path, TEMPLATE_NAME,
         &html_length);
-    HbInputContext* input_context = handlebars_input_context_from_string(html);
-    server->handlebars = handlebars_template_load(input_context);
-    handlebars_input_context_free(&input_context);
+    HbsInputContext* input_context = hbs_input_context_from_string(html);
+    server->handlebars = hbs_template_load(input_context);
+    hbs_input_context_free(input_context);
     if (NULL == server->handlebars) {
         free(server->stylesheet);
         free(server);
@@ -191,7 +206,7 @@ WebServer* web_server_init(const char* webroot_path,
 void web_server_free(WebServer** server) {
     if (NULL != *server) {
         state_deref(&(*server)->state_publisher);
-        handlebars_template_free(&(*server)->handlebars);
+        hbs_template_free((*server)->handlebars);
         free((*server)->stylesheet);
         free(*server);
         *server = NULL;

@@ -7,7 +7,7 @@
 #
 # CREATED:          11/06/2021
 #
-# LAST EDITED:      11/29/2021
+# LAST EDITED:      01/16/2022
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -46,7 +46,7 @@ bluez = gnome.gdbus_codegen(
 libglib = dependency('glib-2.0')
 libgio_unix = dependency('gio-unix-2.0')
 libsoup3 = dependency('libsoup-3.0')
-libhandlebars = dependency('libhandlebars')
+libhandlebars = dependency('libhandlebars', version: '>=0.3.1')
 
 # Source Files
 agent_files = files([

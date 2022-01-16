@@ -7,7 +7,7 @@
 //
 // CREATED:         11/20/2021
 //
-// LAST EDITED:     11/27/2021
+// LAST EDITED:     01/16/2022
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,7 +28,7 @@
 #ifndef WEB_SERVER_H
 #define WEB_SERVER_H
 
-typedef struct Handlebars Handlebars;
+typedef struct HbsTemplate HbsTemplate;
 typedef struct StatePublisher StatePublisher;
 typedef struct _SoupServer SoupServer;
 typedef struct _SoupServerMessage SoupServerMessage;
@@ -41,7 +41,7 @@ typedef struct WebServer {
     StatePublisher* state_publisher;
     char* stylesheet;
     size_t stylesheet_length;
-    Handlebars* handlebars;
+    HbsTemplate* handlebars;
 } WebServer;
 
 WebServer* web_server_init(const char* webroot_path,
